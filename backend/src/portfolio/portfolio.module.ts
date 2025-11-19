@@ -7,8 +7,6 @@ import {
   PortfolioHoldingSchema,
   PortfolioSnapshot,
   PortfolioSnapshotSchema,
-  User,
-  UserSchema
 } from "../schemas";
 import { CryptoModule } from "../crypto/crypto.module";
 import { AuthModule } from "../auth/auth.module";
@@ -18,7 +16,6 @@ import { AuthModule } from "../auth/auth.module";
     MongooseModule.forFeature([
       { name: PortfolioHolding.name, schema: PortfolioHoldingSchema },
       { name: PortfolioSnapshot.name, schema: PortfolioSnapshotSchema },
-      { name: User.name, schema: UserSchema },
     ]),
     CryptoModule,
     AuthModule,

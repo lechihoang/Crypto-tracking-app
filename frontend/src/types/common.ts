@@ -5,7 +5,7 @@
 
 // Portfolio holding with computed value
 export interface HoldingWithValue {
-  id: string;
+  _id: string; // MongoDB document ID
   coinId: string;
   coinSymbol: string;
   coinName: string;
@@ -30,7 +30,7 @@ export interface Coin {
 
 // Alert/Notification (simplified version of PriceAlert for display)
 export interface Alert {
-  id: string;
+  _id: string; // MongoDB ID
   coinId: string;
   coinSymbol?: string; // Populated from API
   coinName?: string; // Populated from API

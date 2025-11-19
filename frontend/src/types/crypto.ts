@@ -146,7 +146,7 @@ export interface PriceHistory {
   }>;
 }
 
-// Coin info from backend API (getCoinInfo/getCoinInfoVietnamese)
+// Coin info from backend API (getCoinInfo)
 export interface CoinInfo {
   id: number;
   name: string;

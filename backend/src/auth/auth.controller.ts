@@ -11,11 +11,14 @@ import {
   Res,
   Inject,
   forwardRef,
+  HttpCode,
+  HttpStatus,
 } from "@nestjs/common";
 import { Response } from "express";
 import { AuthService } from "./auth.service";
 import { Auth0Service } from "./auth0.service";
 import { UserService } from "../user/user.service";
+import { AuthToken } from "./decorators/auth-token.decorator";
 import {
   SignUpDto,
   SignInDto,
@@ -34,6 +37,7 @@ export class AuthController {
   ) {}
 
   @Post("signup")
+  @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async signUp(@Body() signUpDto: SignUpDto) {
     return this.authService.signUp(signUpDto);
@@ -41,7 +45,10 @@ export class AuthController {
 
   @Post("signin")
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-  async signIn(@Body() signInDto: SignInDto) {
+  async signIn(
+    @Body() signInDto: SignInDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.signIn(signInDto);
     console.log("SignIn result:", {
       hasUser: !!result.user,
@@ -50,24 +57,24 @@ export class AuthController {
       accessTokenLength: result.session?.access_token?.length,
     });
 
-    const response = {
+    // Set HttpOnly cookies for tokens
+    this.setAuthCookies(
+      res,
+      result.session.access_token,
+      result.session.id_token,
+    );
+
+    console.log("Tokens set in HttpOnly cookies");
+
+    // Return only user info, no tokens
+    return {
       user: {
         id: result.user.id,
         email: result.user.email,
         name: result.user.name,
         picture: result.user.picture,
       },
-      access_token: result.session.access_token,
-      id_token: result.session.id_token,
-      expires_in: result.session.expires_in,
     };
-
-    console.log("Sending response:", {
-      hasAccessToken: !!response.access_token,
-      accessTokenLength: response.access_token?.length,
-    });
-
-    return response;
   }
 
   @Post("reset-password")
@@ -97,24 +104,46 @@ export class AuthController {
   }
 
   @Get("me")
-  async getProfile(@Headers("authorization") authHeader: string) {
-    if (!authHeader) {
-      throw new UnauthorizedException("Authorization header required");
-    }
-
-    const token = authHeader.replace("Bearer ", "");
+  async getProfile(@AuthToken() token: string) {
     return this.authService.getUser(token);
   }
 
   @Post("logout")
-  async logout(@Headers("authorization") authHeader: string) {
-    if (!authHeader) {
-      // Even without token, return success for logout
-      return { message: "Logged out successfully" };
-    }
+  async logout(@Res({ passthrough: true }) res: Response) {
+    // Clear cookies
+    this.clearAuthCookies(res);
+    return { message: "Logged out successfully" };
+  }
 
-    const token = authHeader.replace("Bearer ", "");
-    return this.authService.logout(token);
+  // Helper method to set auth cookies
+  private setAuthCookies(res: Response, accessToken: string, idToken?: string) {
+    const isProduction = process.env.NODE_ENV === "production";
+
+    // Set access token cookie
+    res.cookie("auth_token", accessToken, {
+      httpOnly: true,
+      secure: isProduction, // true in production (HTTPS)
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: "/",
+    });
+
+    // Set ID token cookie if provided
+    if (idToken) {
+      res.cookie("id_token", idToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000,
+        path: "/",
+      });
+    }
+  }
+
+  // Helper method to clear auth cookies
+  private clearAuthCookies(res: Response) {
+    res.clearCookie("auth_token", { path: "/" });
+    res.clearCookie("id_token", { path: "/" });
   }
 
   // Social Login Endpoints
@@ -154,15 +183,17 @@ export class AuthController {
         await this.userService.upsertUser(user.user_id, user.email, user.name);
       }
 
-      // Redirect to frontend with tokens
+      // Set HttpOnly cookies for tokens
+      this.setAuthCookies(res, tokens.access_token, tokens.id_token);
+
+      // Redirect to frontend with user info only (tokens are in cookies)
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
       const params = new URLSearchParams({
-        access_token: tokens.access_token,
-        id_token: tokens.id_token,
         user_id: user.user_id,
         email: user.email,
         name: user.name || "",
         picture: user.picture || "",
+        success: "true",
       });
 
       return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);

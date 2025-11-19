@@ -6,6 +6,8 @@ import {
   Body,
   Query,
   UnauthorizedException,
+  HttpCode,
+  HttpStatus,
 } from "@nestjs/common";
 import { ChatbotService } from "./chatbot.service";
 import { SendMessageDto, ChatResponse } from "./dto/chat-message.dto";
@@ -74,6 +76,7 @@ export class ChatbotController {
   }
 
   @Delete("history")
+  @HttpCode(HttpStatus.NO_CONTENT)
   async clearChatHistory(
     @Query("userId") userId: string,
     @Query("sessionId") sessionId?: string,
@@ -83,9 +86,5 @@ export class ChatbotController {
     }
 
     await this.chatbotService.clearChatHistory(userId, sessionId);
-
-    return {
-      message: "Chat history cleared successfully",
-    };
   }
 }

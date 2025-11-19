@@ -32,6 +32,9 @@ interface BenchmarkData {
   profitLossPercentage: number;
 }
 
+// Constants
+const BENCHMARK_UPDATE_DELAY = 500; // ms - Wait for portfolio data to be updated
+
 export default function PortfolioPage() {
   const { user, loading: authLoading } = useAuth();
   const [holdings, setHoldings] = useState<HoldingWithValue[]>([]);
@@ -89,7 +92,7 @@ export default function PortfolioPage() {
         setTotalValue(portfolioData.totalValue || 0);
         setHoldings(portfolioData.holdings?.map((h) => ({
           ...h.holding,
-          id: h.holding.id || '', // Map MongoDB _id to id
+          id: h.holding._id, // Use MongoDB _id as id
           currentPrice: h.currentPrice,
           value: h.currentValue, // Map to common type field name
           currentValue: h.currentValue,
@@ -165,16 +168,9 @@ export default function PortfolioPage() {
 
     try {
       const deletePromise = (async () => {
-        const result = await portfolioApi.removeHolding(deletingHolding.id);
+        const result = await portfolioApi.removeHolding(deletingHolding._id);
         if (result.error) {
           throw new Error(result.error);
-        }
-
-        // Create a snapshot after deleting holding
-        try {
-          await portfolioApi.createSnapshot();
-        } catch (error) {
-          console.log('Failed to create snapshot:', error);
         }
 
         await fetchPortfolioData();
@@ -191,7 +187,9 @@ export default function PortfolioPage() {
             await portfolioApi.deleteBenchmark();
             await fetchBenchmarkData();
           } catch (error) {
-            console.log('Failed to delete benchmark:', error);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Failed to delete benchmark:', error);
+            }
           }
         } else if (benchmarkData?.benchmark) {
           setShowBenchmarkWarning(true);
@@ -221,9 +219,9 @@ export default function PortfolioPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-dark-900">
         <div className="flex items-center justify-center h-64">
-          <p className="text-gray-600">Vui lòng đăng nhập để xem portfolio</p>
+          <p className="text-gray-100">Vui lòng đăng nhập để xem portfolio</p>
         </div>
       </div>
     );
@@ -241,16 +239,16 @@ export default function PortfolioPage() {
   } : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-dark-900">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Danh mục đầu tư</h1>
+            <h1 className="text-3xl font-bold text-white">Danh mục đầu tư</h1>
             <div className="flex items-center gap-4 mt-1">
-              <p className="text-gray-600">Theo dõi danh mục đầu tư crypto của bạn</p>
+              <p className="text-gray-100">Theo dõi danh mục đầu tư crypto của bạn</p>
               {lastUpdated && (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-400">
                   • Cập nhật lúc {lastUpdated.toLocaleTimeString('vi-VN')}
                 </span>
               )}
@@ -265,7 +263,7 @@ export default function PortfolioPage() {
 
           // If this was the first coin added and no benchmark exists, auto-set it
           if (hadNoHoldings && !benchmarkData?.benchmark) {
-            // Wait a bit for portfolio data to be updated
+            // Wait for portfolio data to be updated before setting benchmark
             setTimeout(async () => {
               const result = await portfolioApi.getPortfolioValue();
               if (result.data && typeof result.data === 'object' && 'totalValue' in result.data) {
@@ -276,11 +274,13 @@ export default function PortfolioPage() {
                     await fetchBenchmarkData();
                     toast.success('Đã tự động đặt mốc đầu tư với giá trị hiện tại');
                   } catch (error) {
-                    console.error('Failed to auto-set benchmark:', error);
+                    if (process.env.NODE_ENV === 'development') {
+                      console.error('Failed to auto-set benchmark:', error);
+                    }
                   }
                 }
               }
-            }, 500);
+            }, BENCHMARK_UPDATE_DELAY);
           } else if (benchmarkData?.benchmark) {
             // Show benchmark warning if benchmark exists
             setShowBenchmarkWarning(true);
@@ -288,22 +288,22 @@ export default function PortfolioPage() {
         }} />
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-danger-500/20 border border-danger-500/40 text-danger-400 px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
 
         {/* Benchmark Outdated Warning */}
         {showBenchmarkWarning && benchmarkData?.benchmark && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="bg-warning-500/20 border border-warning-500/40 rounded-lg p-4 mb-6">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
-                <Target className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <Target className="w-5 h-5 text-warning-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-sm font-semibold text-yellow-900 mb-1">
+                  <h4 className="text-sm font-semibold text-white mb-1">
                     Mốc đầu tư có thể đã lỗi thời
                   </h4>
-                  <p className="text-sm text-yellow-700 mb-3">
+                  <p className="text-sm text-gray-300 mb-3">
                     Danh mục đầu tư của bạn đã thay đổi (thêm/xóa coin). Bạn có muốn cập nhật mốc với giá trị hiện tại?
                   </p>
                   <div className="flex gap-2">
@@ -313,13 +313,13 @@ export default function PortfolioPage() {
                         setShowBenchmarkWarning(false);
                       }}
                       disabled={settingBenchmark}
-                      className="px-3 py-1.5 text-sm bg-yellow-600 text-white hover:bg-yellow-700 disabled:bg-gray-400 rounded-lg transition-colors"
+                      className="px-3 py-1.5 text-sm bg-warning-500 hover:bg-warning-600 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
                     >
                       {settingBenchmark ? 'Đang cập nhật...' : 'Cập nhật mốc'}
                     </button>
                     <button
                       onClick={() => setShowBenchmarkWarning(false)}
-                      className="px-3 py-1.5 text-sm text-yellow-700 hover:bg-yellow-100 rounded-lg transition-colors"
+                      className="px-3 py-1.5 text-sm text-gray-100 hover:bg-dark-700 border border-gray-600 rounded-lg transition-colors"
                     >
                       Bỏ qua
                     </button>
@@ -328,7 +328,7 @@ export default function PortfolioPage() {
               </div>
               <button
                 onClick={() => setShowBenchmarkWarning(false)}
-                className="text-yellow-600 hover:text-yellow-800 p-1"
+                className="text-gray-400 hover:text-gray-300 p-1 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -339,44 +339,44 @@ export default function PortfolioPage() {
         {/* Benchmark Section & Pie Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Benchmark Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-gray-800 border border-gray-600/50 shadow-[0_2px_8px_rgba(0,0,0,0.3)] rounded-xl hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300 p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Flag className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-primary-500/20 rounded-lg flex items-center justify-center">
+                  <Flag className="w-5 h-5 text-primary-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Mốc đầu tư</h3>
-                  <p className="text-sm text-gray-600">Theo dõi lãi/lỗ so với giá trị ban đầu</p>
+                  <h3 className="text-lg font-semibold text-white">Mốc đầu tư</h3>
+                  <p className="text-sm text-gray-300">Theo dõi lãi/lỗ so với giá trị ban đầu</p>
                 </div>
               </div>
             </div>
 
             {realtimeBenchmarkData?.benchmark ? (
               <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  <p className="text-xs font-medium text-gray-600 mb-1">Giá trị mốc</p>
-                  <p className="text-xl font-bold text-gray-900">{formatCurrency(realtimeBenchmarkData.benchmark.value, true)}</p>
+                <div className="bg-dark-700 rounded-lg p-4 border border-gray-600">
+                  <p className="text-xs font-medium text-gray-400 mb-1">Giá trị mốc</p>
+                  <p className="text-xl font-bold text-white">{formatCurrency(realtimeBenchmarkData.benchmark.value, true)}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Đặt lúc: {new Date(realtimeBenchmarkData.benchmark.setAt).toLocaleDateString('vi-VN')}
                   </p>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  <p className="text-xs font-medium text-gray-600 mb-1">Giá trị hiện tại</p>
-                  <p className="text-xl font-bold text-gray-900">{formatCurrency(realtimeBenchmarkData.currentValue, true)}</p>
+                <div className="bg-dark-700 rounded-lg p-4 border border-gray-600">
+                  <p className="text-xs font-medium text-gray-400 mb-1">Giá trị hiện tại</p>
+                  <p className="text-xl font-bold text-white">{formatCurrency(realtimeBenchmarkData.currentValue, true)}</p>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  <p className="text-xs font-medium text-gray-600 mb-1">Lãi/Lỗ từ mốc</p>
-                  <p className={`text-xl font-bold ${realtimeBenchmarkData.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className="bg-dark-700 rounded-lg p-4 border border-gray-600">
+                  <p className="text-xs font-medium text-gray-400 mb-1">Lãi/Lỗ từ mốc</p>
+                  <p className={`text-xl font-bold ${realtimeBenchmarkData.profitLoss >= 0 ? 'text-success-400' : 'text-danger-400'}`}>
                     {realtimeBenchmarkData.profitLoss >= 0 ? '+' : ''}{formatCurrency(Math.abs(realtimeBenchmarkData.profitLoss), true)}
                   </p>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  <p className="text-xs font-medium text-gray-600 mb-1">Lãi/Lỗ % từ mốc</p>
-                  <p className={`text-xl font-bold ${realtimeBenchmarkData.profitLossPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className="bg-dark-700 rounded-lg p-4 border border-gray-600">
+                  <p className="text-xs font-medium text-gray-400 mb-1">Lãi/Lỗ % từ mốc</p>
+                  <p className={`text-xl font-bold ${realtimeBenchmarkData.profitLossPercentage >= 0 ? 'text-success-400' : 'text-danger-400'}`}>
                     {formatPercentage(realtimeBenchmarkData.profitLossPercentage)}
                   </p>
                 </div>
@@ -385,7 +385,7 @@ export default function PortfolioPage() {
                   <button
                     onClick={handleSetBenchmark}
                     disabled={settingBenchmark}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-primary-500 hover:bg-primary-600 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
                   >
                     {settingBenchmark ? (
                       <Loader className="w-4 h-4 animate-spin" />
@@ -395,33 +395,33 @@ export default function PortfolioPage() {
                     Cập nhật mốc với giá hiện tại
                   </button>
                 ) : (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-800 text-center">
+                  <div className="bg-primary-500/20 border border-primary-500/40 rounded-lg p-4">
+                    <p className="text-sm text-primary-400 text-center">
                       Hãy thêm đồng tiền để theo dõi lãi/lỗ
                     </p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">
-                <Flag className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <div className="text-center py-12 bg-dark-700 rounded-lg border border-gray-600">
+                <Flag className="w-12 h-12 text-gray-500 mx-auto mb-3" />
                 {holdings.length === 0 ? (
                   <>
-                    <p className="text-gray-600 mb-2">Chưa có đồng tiền nào</p>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-gray-100 mb-2">Chưa có đồng tiền nào</p>
+                    <p className="text-sm text-gray-400 mb-4">
                       Hãy thêm đồng tiền vào danh mục để bắt đầu theo dõi lãi/lỗ
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-gray-600 mb-2">Chưa đặt mốc đầu tư</p>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-gray-100 mb-2">Chưa đặt mốc đầu tư</p>
+                    <p className="text-sm text-gray-400 mb-4">
                       Đặt giá trị hiện tại làm mốc để theo dõi lãi/lỗ từ thời điểm này
                     </p>
                     <button
                       onClick={handleSetBenchmark}
                       disabled={settingBenchmark || !totalValue}
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-primary-500 hover:bg-primary-600 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
                     >
                       {settingBenchmark ? (
                         <Loader className="w-4 h-4 animate-spin" />
@@ -437,22 +437,22 @@ export default function PortfolioPage() {
           </div>
 
           {/* Portfolio Distribution Pie Chart */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-gray-800 border border-gray-600/50 shadow-[0_2px_8px_rgba(0,0,0,0.3)] rounded-xl hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300 p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <PieChart className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-primary-500/20 rounded-lg flex items-center justify-center">
+                <PieChart className="w-5 h-5 text-primary-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Phân bổ danh mục</h3>
-                <p className="text-sm text-gray-600">Tỷ trọng các đồng coin hiện tại</p>
+                <h3 className="text-lg font-semibold text-white">Phân bổ danh mục</h3>
+                <p className="text-sm text-gray-100">Tỷ trọng các đồng coin hiện tại</p>
               </div>
             </div>
 
             {holdings.length === 0 ? (
               <div className="text-center py-12">
-                <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2">Chưa có dữ liệu</p>
-                <p className="text-sm text-gray-500">
+                <PieChart className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-100 mb-2">Chưa có dữ liệu</p>
+                <p className="text-sm text-gray-400">
                   Thêm coin vào danh mục để xem biểu đồ phân bổ
                 </p>
               </div>
@@ -468,82 +468,82 @@ export default function PortfolioPage() {
         </div>
 
         {/* Holdings Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Danh sách coin</h3>
+        <div className="bg-gray-800 border border-gray-600/50 shadow-[0_2px_8px_rgba(0,0,0,0.3)] rounded-xl hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300">
+          <div className="px-6 py-4 border-b border-gray-600/50">
+            <h3 className="text-lg font-semibold text-white">Danh sách coin</h3>
           </div>
 
           {holdings.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <PieChart className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-dark-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <PieChart className="w-8 h-8 text-gray-500" />
               </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">
+              <h4 className="text-lg font-medium text-white mb-2">
                 Danh mục trống
               </h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-100 mb-4">
                 Thêm các đồng coin đã mua để bắt đầu theo dõi danh mục đầu tư
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-400">
                 Sử dụng form ở trên để thêm coin đầu tiên
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider border-b border-gray-600/50">
                       Coin
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider border-b border-gray-600/50">
                       Số lượng
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider border-b border-gray-600/50">
                       Giá/coin
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider border-b border-gray-600/50">
                       Tổng giá trị
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-100 uppercase tracking-wider border-b border-gray-600/50">
                       Thao tác
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-600/30">
                   {holdings.map((holding) => (
-                    <tr key={holding.id} className="hover:bg-gray-50">
+                    <tr key={holding._id} className="hover:bg-dark-700 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-white">
                             {holding.coinName}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-400">
                             {holding.coinSymbol.toUpperCase()}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                         {Number(holding.quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                         {formatCurrency(Number(holding.currentPrice), true)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                         {formatCurrency(Number(holding.currentValue), true)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setEditingHolding(holding)}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            className="p-1 text-gray-400 hover:text-primary-400 transition-colors"
                             title="Sửa"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setDeletingHolding(holding)}
-                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                            className="p-1 text-gray-400 hover:text-danger-400 transition-colors"
                             title="Xóa"
                           >
                             <Trash2 className="w-4 h-4" />

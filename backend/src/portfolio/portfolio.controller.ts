@@ -6,14 +6,15 @@ import {
   Delete,
   Body,
   Param,
-  Headers,
-  UnauthorizedException,
   UsePipes,
   Query,
   ValidationPipe,
+  HttpCode,
+  HttpStatus,
 } from "@nestjs/common";
 import { PortfolioService } from "./portfolio.service";
 import { AuthService } from "../auth/auth.service";
+import { AuthToken } from "../auth/decorators/auth-token.decorator";
 import { CreateHoldingDto } from "./dto/create-holding.dto";
 import { UpdateHoldingDto } from "./dto/update-holding.dto";
 
@@ -24,40 +25,36 @@ export class PortfolioController {
     private authService: AuthService,
   ) {}
 
-  private async getUserFromToken(authHeader: string): Promise<string> {
-    if (!authHeader) {
-      throw new UnauthorizedException("Authorization header required");
-    }
-
-    const token = authHeader.replace("Bearer ", "");
+  private async getUserFromToken(token: string): Promise<string> {
     const user = await this.authService.getUser(token);
     return user.id;
   }
 
   @Get("holdings")
-  async getHoldings(@Headers("authorization") authHeader: string) {
-    const userId = await this.getUserFromToken(authHeader);
+  async getHoldings(@AuthToken() token: string) {
+    const userId = await this.getUserFromToken(token);
     return this.portfolioService.getHoldings(userId);
   }
 
   @Post("holdings")
+  @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async addHolding(
-    @Headers("authorization") authHeader: string,
+    @AuthToken() token: string,
     @Body() createHoldingDto: CreateHoldingDto,
   ) {
-    const userId = await this.getUserFromToken(authHeader);
+    const userId = await this.getUserFromToken(token);
     return this.portfolioService.addHolding(userId, createHoldingDto);
   }
 
   @Put("holdings/:id")
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async updateHolding(
-    @Headers("authorization") authHeader: string,
+    @AuthToken() token: string,
     @Param("id") holdingId: string,
     @Body() updateHoldingDto: UpdateHoldingDto,
   ) {
-    const userId = await this.getUserFromToken(authHeader);
+    const userId = await this.getUserFromToken(token);
     return this.portfolioService.updateHolding(
       userId,
       holdingId,
@@ -66,61 +63,43 @@ export class PortfolioController {
   }
 
   @Delete("holdings/:id")
+  @HttpCode(HttpStatus.NO_CONTENT)
   async removeHolding(
-    @Headers("authorization") authHeader: string,
+    @AuthToken() token: string,
     @Param("id") holdingId: string,
   ) {
-    const userId = await this.getUserFromToken(authHeader);
+    const userId = await this.getUserFromToken(token);
     await this.portfolioService.removeHolding(userId, holdingId);
-    return { message: "Holding removed successfully" };
   }
 
   @Get("value")
-  async getPortfolioValue(@Headers("authorization") authHeader: string) {
-    const userId = await this.getUserFromToken(authHeader);
+  async getPortfolioValue(@AuthToken() token: string) {
+    const userId = await this.getUserFromToken(token);
     return this.portfolioService.getPortfolioValue(userId);
-  }
-
-  @Post("snapshot")
-  async createSnapshot(@Headers("authorization") authHeader: string) {
-    const userId = await this.getUserFromToken(authHeader);
-    const { totalValue } =
-      await this.portfolioService.getPortfolioValue(userId);
-    return this.portfolioService.createSnapshot(userId, totalValue);
-  }
-
-  @Get("history")
-  async getPortfolioHistory(
-    @Headers("authorization") authHeader: string,
-    @Query("days") days?: string,
-  ) {
-    const userId = await this.getUserFromToken(authHeader);
-    const numDays = days ? parseInt(days, 10) : 30;
-    return this.portfolioService.getPortfolioHistory(userId, numDays);
   }
 
   @Get("value-history")
   async getPortfolioValueHistory(
-    @Headers("authorization") authHeader: string,
+    @AuthToken() token: string,
     @Query("days") days?: string,
   ) {
-    const userId = await this.getUserFromToken(authHeader);
+    const userId = await this.getUserFromToken(token);
     const numDays = days ? parseInt(days, 10) : 7;
     return this.portfolioService.getPortfolioValueHistory(userId, numDays);
   }
 
   @Post("benchmark")
   async setBenchmark(
-    @Headers("authorization") authHeader: string,
+    @AuthToken() token: string,
     @Body("benchmarkValue") benchmarkValue: number,
   ) {
-    const userId = await this.getUserFromToken(authHeader);
+    const userId = await this.getUserFromToken(token);
     return this.portfolioService.setBenchmark(userId, benchmarkValue);
   }
 
   @Get("benchmark")
-  async getBenchmark(@Headers("authorization") authHeader: string) {
-    const userId = await this.getUserFromToken(authHeader);
+  async getBenchmark(@AuthToken() token: string) {
+    const userId = await this.getUserFromToken(token);
     const benchmark = await this.portfolioService.getBenchmark(userId);
 
     // Also return current portfolio value for comparison
@@ -154,9 +133,9 @@ export class PortfolioController {
   }
 
   @Delete("benchmark")
-  async deleteBenchmark(@Headers("authorization") authHeader: string) {
-    const userId = await this.getUserFromToken(authHeader);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteBenchmark(@AuthToken() token: string) {
+    const userId = await this.getUserFromToken(token);
     await this.portfolioService.deleteBenchmark(userId);
-    return { message: "Benchmark deleted successfully" };
   }
 }

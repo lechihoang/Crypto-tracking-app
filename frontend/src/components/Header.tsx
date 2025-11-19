@@ -19,16 +19,16 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-dark-900/95 backdrop-blur-md border-b border-dark-600/50 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-all duration-300 group">
+              <div className="p-2 bg-primary-500 rounded-lg transition-all duration-300">
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Crypto Tracker</h1>
+              <h1 className="text-2xl font-bold text-white">Crypto Tracker</h1>
             </Link>
           </div>
 
@@ -36,34 +36,27 @@ export default function Header() {
           <nav className="hidden md:flex items-center space-x-2">
             <Link
               href="/compare"
-              className="relative px-4 py-2 font-medium text-gray-600 hover:text-blue-600 transition-colors duration-200 group"
+              className="relative px-4 py-2 font-medium text-gray-100 hover:text-white transition-colors duration-200 group"
             >
-              So sánh
-              <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 transition-transform duration-300 origin-center ${pathname === '/compare' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}></span>
-            </Link>
-            <Link
-              href="/blog"
-              className="relative px-4 py-2 font-medium text-gray-600 hover:text-blue-600 transition-colors duration-200 group"
-            >
-              Tin tức
-              <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 transition-transform duration-300 origin-center ${pathname === '/blog' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}></span>
+              Bảng giá
+              <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 transition-transform duration-200 origin-center ${pathname === '/compare' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}></span>
             </Link>
 
             {user && (
               <>
                 <Link
                   href="/dashboard"
-                  className="relative px-4 py-2 font-medium text-gray-600 hover:text-blue-600 transition-colors duration-200 group"
+                  className="relative px-4 py-2 font-medium text-gray-100 hover:text-white transition-colors duration-200 group"
                 >
-                  Dashboard
-                  <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 transition-transform duration-300 origin-center ${pathname === '/dashboard' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}></span>
+                  Tổng quan
+                  <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 transition-transform duration-200 origin-center ${pathname === '/dashboard' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}></span>
                 </Link>
                 <Link
-                  href="/portfolio"
-                  className="relative px-4 py-2 font-medium text-gray-600 hover:text-blue-600 transition-colors duration-200 group"
+                  href="/alerts"
+                  className="relative px-4 py-2 font-medium text-gray-100 hover:text-white transition-colors duration-200 group"
                 >
-                  Danh mục
-                  <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 transition-transform duration-300 origin-center ${pathname === '/portfolio' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}></span>
+                  Cảnh báo
+                  <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 transition-transform duration-200 origin-center ${pathname === '/alerts' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}></span>
                 </Link>
               </>
             )}
@@ -80,46 +73,37 @@ export default function Header() {
                 <div className="relative">
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-2 p-2 rounded-sm hover:bg-dark-700 transition-all duration-200"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
                       <User className="w-4 h-4 text-white" />
                     </div>
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-white">
                       {user.name || user.email?.split('@')[0]}
                     </span>
                   </button>
 
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">
+                  <div className="absolute right-0 mt-2 w-56 bg-dark-800 rounded-lg border border-dark-600 backdrop-blur-md py-2 z-50">
+                    <div className="px-4 py-2 border-b border-dark-600">
+                      <p className="text-sm font-semibold text-white">
                         {user.name || 'User'}
                       </p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                      <p className="text-xs text-gray-100">{user.email}</p>
                     </div>
 
                     <Link
                       href="/dashboard"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-100 hover:bg-dark-700 hover:text-white transition-all duration-200 rounded-md mx-2"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       <BarChart3 className="w-4 h-4" />
-                      Dashboard
-                    </Link>
-
-                    <Link
-                      href="/portfolio"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <Wallet className="w-4 h-4" />
-                      Danh mục đầu tư
+                      Tổng quan
                     </Link>
 
                     <Link
                       href="/alerts"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-100 hover:bg-dark-700 hover:text-white transition-all duration-200 rounded-md mx-2"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       <Bell className="w-4 h-4" />
@@ -128,18 +112,18 @@ export default function Header() {
 
                     <Link
                       href="/settings"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-100 hover:bg-dark-700 hover:text-white transition-all duration-200 rounded-md mx-2"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       <Settings className="w-4 h-4" />
                       Cài đặt
                     </Link>
 
-                    <hr className="my-2" />
+                    <hr className="my-2 border-dark-600" />
 
                     <button
                       onClick={handleSignOut}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-danger-500 hover:bg-danger-500/10 transition-all duration-200 rounded-md mx-2"
                     >
                       <LogOut className="w-4 h-4" />
                       Đăng xuất
@@ -152,13 +136,13 @@ export default function Header() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/auth/login"
-                  className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium transition-colors"
+                  className="px-4 py-2 text-gray-100 hover:text-white font-medium transition-all duration-300"
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
+                  className="px-6 py-2.5 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition-all duration-300"
                 >
                   Đăng ký
                 </Link>
@@ -170,7 +154,7 @@ export default function Header() {
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100"
+              className="p-2 rounded-lg hover:bg-dark-700 text-gray-100 transition-all duration-300"
             >
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -179,59 +163,45 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-gray-200 pt-4">
+          <div className="md:hidden pb-4 border-t border-dark-600/50 pt-4">
             <div className="space-y-2">
               <Link
                 href="/compare"
-                className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg"
+                className="block px-4 py-2 text-gray-100 hover:text-white hover:bg-dark-700 rounded-lg transition-all duration-300"
                 onClick={() => setIsMenuOpen(false)}
               >
-                So sánh
-              </Link>
-              <Link
-                href="/blog"
-                className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Tin tức
+                Bảng giá
               </Link>
 
               {user ? (
                 <>
                   <Link
                     href="/dashboard"
-                    className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg"
+                    className="block px-4 py-2 text-gray-100 hover:text-white hover:bg-dark-700 rounded-lg transition-all duration-300"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/portfolio"
-                    className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Danh mục
+                    Tổng quan
                   </Link>
                   <Link
                     href="/alerts"
-                    className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg"
+                    className="block px-4 py-2 text-gray-100 hover:text-white hover:bg-dark-700 rounded-lg transition-all duration-300"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Cảnh báo
                   </Link>
-                  <div className="border-t border-gray-200 pt-2 mt-2">
+                  <div className="border-t border-dark-600/50 pt-2 mt-2">
                     <div className="px-4 py-2">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-semibold text-white">
                         {user.name || 'User'}
                       </p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                      <p className="text-xs text-gray-100">{user.email}</p>
                     </div>
                     <button
                       onClick={() => {
                         handleSignOut();
                         setIsMenuOpen(false);
                       }}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-danger-500 hover:bg-danger-500/10 rounded-lg transition-all duration-300"
                     >
                       <LogOut className="w-4 h-4" />
                       Đăng xuất
@@ -239,17 +209,17 @@ export default function Header() {
                   </div>
                 </>
               ) : (
-                <div className="border-t border-gray-200 pt-2 mt-2 space-y-2">
+                <div className="border-t border-dark-600/50 pt-2 mt-2 space-y-2">
                   <Link
                     href="/auth/login"
-                    className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg"
+                    className="block px-4 py-2 text-gray-100 hover:text-white hover:bg-dark-700 rounded-lg transition-all duration-300"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Đăng nhập
                   </Link>
                   <Link
                     href="/auth/register"
-                    className="block px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-medium"
+                    className="block px-4 py-2 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition-all duration-300 text-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Đăng ký

@@ -3,12 +3,14 @@ import {
   Get,
   Patch,
   Body,
-  Headers,
-  UnauthorizedException,
   Logger,
+  UnauthorizedException,
+  HttpCode,
+  HttpStatus,
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { AuthService } from "../auth/auth.service";
+import { AuthToken } from "../auth/decorators/auth-token.decorator";
 
 @Controller("user")
 export class UserController {
@@ -19,21 +21,22 @@ export class UserController {
     private authService: AuthService,
   ) {}
 
-  private async getUserFromToken(authHeader: string) {
-    if (!authHeader) {
-      throw new UnauthorizedException("Authorization header required");
+  private async getUserFromToken(token: string) {
+    if (!token) {
+      throw new UnauthorizedException("Authentication token is required");
     }
-
-    const token = authHeader.replace("Bearer ", "");
     const user = await this.authService.getUser(token);
+    if (!user) {
+      throw new UnauthorizedException("Invalid or expired token");
+    }
     return user;
   }
 
   // ============ User Endpoints ============
 
   @Get()
-  async getUser(@Headers("authorization") authHeader: string) {
-    const authUser = await this.getUserFromToken(authHeader);
+  async getUser(@AuthToken() token: string) {
+    const authUser = await this.getUserFromToken(token);
     this.logger.log(`Getting user preferences for: ${authUser.id}`);
     const user = await this.userService.getUser(authUser.id);
     this.logger.log(
@@ -43,11 +46,12 @@ export class UserController {
   }
 
   @Patch("display-name")
+  @HttpCode(HttpStatus.OK)
   async updateDisplayName(
-    @Headers("authorization") authHeader: string,
+    @AuthToken() token: string,
     @Body() body: { displayName: string },
   ) {
-    const authUser = await this.getUserFromToken(authHeader);
+    const authUser = await this.getUserFromToken(token);
     const user = await this.userService.updateDisplayName(
       authUser.id,
       body.displayName,
@@ -59,11 +63,12 @@ export class UserController {
   }
 
   @Patch("email-notifications")
+  @HttpCode(HttpStatus.OK)
   async updateEmailNotifications(
-    @Headers("authorization") authHeader: string,
+    @AuthToken() token: string,
     @Body() body: { enabled: boolean },
   ) {
-    const authUser = await this.getUserFromToken(authHeader);
+    const authUser = await this.getUserFromToken(token);
     this.logger.log(
       `Updating email notifications for ${authUser.id}: ${body.enabled}`,
     );

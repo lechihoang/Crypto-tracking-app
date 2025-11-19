@@ -178,42 +178,42 @@ export default function SettingsPage() {
 
   if (loading || !preferencesLoaded) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Đang tải...</p>
+          <Loader className="w-8 h-8 animate-spin text-primary-500 mx-auto" />
+          <p className="mt-4 text-gray-400">Đang tải...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-dark-900">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Cài đặt</h1>
-          <p className="text-gray-700">Quản lý thông tin cá nhân và cài đặt tài khoản</p>
+          <h1 className="text-3xl font-bold text-gray-100 mb-2">Cài đặt</h1>
+          <p className="text-gray-400">Quản lý thông tin cá nhân và cài đặt tài khoản</p>
         </div>
 
         <div className="space-y-6">
           {/* Profile Information Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="px-6 py-5 border-b border-gray-200">
+          <div className="bg-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50">
+            <div className="px-6 py-5 border-b border-gray-600/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <User className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-primary-500/20 rounded-lg flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Thông tin cá nhân</h3>
-                    <p className="text-sm text-gray-600">Cập nhật thông tin tài khoản của bạn</p>
+                    <h3 className="text-lg font-semibold text-white">Thông tin cá nhân</h3>
+                    <p className="text-sm text-gray-100">Cập nhật thông tin tài khoản của bạn</p>
                   </div>
                 </div>
                 {!isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-primary-400 hover:text-primary-300 hover:bg-primary-500/10 rounded-lg transition-colors"
                   >
                     Chỉnh sửa
                   </button>
@@ -225,7 +225,7 @@ export default function SettingsPage() {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Full Name */}
                 <div>
-                  <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="fullName" className="block text-sm font-semibold text-gray-100 mb-2">
                     Họ và tên
                   </label>
                   {isEditing ? (
@@ -234,31 +234,31 @@ export default function SettingsPage() {
                         {...register('fullName')}
                         id="fullName"
                         type="text"
-                        className={`block w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 ${
-                          errors.fullName ? 'border-red-300' : 'border-gray-300'
+                        className={`block w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-dark-700 text-gray-50 placeholder-gray-300 ${
+                          errors.fullName ? 'border-red-500' : 'border-gray-600'
                         }`}
                         placeholder="Nhập họ và tên"
                       />
                       {errors.fullName && (
-                        <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
+                        <p className="mt-1 text-sm text-red-400">{errors.fullName.message}</p>
                       )}
                     </div>
                   ) : (
-                    <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <p className="text-gray-900">{user?.name || 'Chưa cập nhật'}</p>
+                    <div className="px-4 py-3 bg-dark-700 rounded-lg border border-gray-600">
+                      <p className="text-gray-50">{user?.name || 'Chưa cập nhật'}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-100 mb-2">
                     Email
                   </label>
-                  <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="px-4 py-3 bg-dark-700 rounded-lg border border-gray-600">
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-gray-400" />
-                      <p className="text-gray-900">{user?.email}</p>
+                      <p className="text-gray-50">{user?.email}</p>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">Email không thể thay đổi</p>
                   </div>
@@ -270,7 +270,7 @@ export default function SettingsPage() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {saving ? (
                         <>
@@ -291,7 +291,7 @@ export default function SettingsPage() {
                         reset();
                       }}
                       disabled={saving}
-                      className="px-6 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-3 border border-gray-600 text-gray-100 rounded-lg hover:bg-dark-700 hover:border-gray-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Hủy
                     </button>
@@ -302,15 +302,15 @@ export default function SettingsPage() {
           </div>
 
           {/* Security Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="px-6 py-5 border-b border-gray-200">
+          <div className="bg-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50">
+            <div className="px-6 py-5 border-b border-gray-600/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Lock className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-primary-500/20 rounded-lg flex items-center justify-center">
+                  <Lock className="w-5 h-5 text-primary-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Bảo mật</h3>
-                  <p className="text-sm text-gray-600">Quản lý mật khẩu và bảo mật tài khoản</p>
+                  <h3 className="text-lg font-semibold text-white">Bảo mật</h3>
+                  <p className="text-sm text-gray-100">Quản lý mật khẩu và bảo mật tài khoản</p>
                 </div>
               </div>
             </div>
@@ -320,33 +320,33 @@ export default function SettingsPage() {
                 {/* Change Password */}
                 <button
                   onClick={() => router.push('/auth/change-password')}
-                  className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors group"
+                  className="w-full flex items-center justify-between p-4 border border-gray-600 rounded-lg hover:bg-dark-700 transition-colors group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                      <Lock className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
+                    <div className="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center group-hover:bg-primary-500/20 transition-colors">
+                      <Lock className="w-5 h-5 text-gray-400 group-hover:text-primary-400 transition-colors" />
                     </div>
                     <div className="text-left">
-                      <p className="font-medium text-gray-900">Đổi mật khẩu</p>
-                      <p className="text-sm text-gray-600">Cập nhật mật khẩu để bảo mật tài khoản</p>
+                      <p className="font-medium text-gray-50">Đổi mật khẩu</p>
+                      <p className="text-sm text-gray-100">Cập nhật mật khẩu để bảo mật tài khoản</p>
                     </div>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-400 transition-colors" />
                 </button>
               </div>
             </div>
           </div>
 
           {/* Notifications Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="px-6 py-5 border-b border-gray-200">
+          <div className="bg-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50">
+            <div className="px-6 py-5 border-b border-gray-600/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-primary-500/20 rounded-lg flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-primary-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Thông báo</h3>
-                  <p className="text-sm text-gray-600">Quản lý cách nhận thông báo cảnh báo giá</p>
+                  <h3 className="text-lg font-semibold text-white">Thông báo</h3>
+                  <p className="text-sm text-gray-100">Quản lý cách nhận thông báo cảnh báo giá</p>
                 </div>
               </div>
             </div>
@@ -354,14 +354,14 @@ export default function SettingsPage() {
             <div className="p-6">
               <div className="space-y-6">
                 {/* Email Notifications Toggle */}
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between p-4 border border-gray-600 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Mail className="w-5 h-5 text-gray-600" />
+                    <div className="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-gray-400" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Thông báo qua Email</p>
-                      <p className="text-sm text-gray-600">Nhận email khi cảnh báo giá được kích hoạt</p>
+                      <p className="font-medium text-gray-50">Thông báo qua Email</p>
+                      <p className="text-sm text-gray-100">Nhận email khi cảnh báo giá được kích hoạt</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -371,24 +371,24 @@ export default function SettingsPage() {
                       onChange={(e) => handleEmailNotificationToggle(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-500/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                   </label>
                 </div>
 
                 {/* Email Info */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-900 font-medium mb-1">
+                <div className="bg-primary-500/10 border border-primary-500/30 rounded-lg p-4">
+                  <p className="text-sm text-primary-300 font-medium mb-1">
                     Email thông báo
                   </p>
-                  <p className="text-sm text-blue-800">
+                  <p className="text-sm text-primary-200">
                     Thông báo sẽ được gửi đến: <strong>{user?.email}</strong>
                   </p>
                 </div>
 
                 {/* Notification Description */}
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-400">
                   <p className="mb-2">Khi bật thông báo email, bạn sẽ nhận được:</p>
-                  <ul className="space-y-1 list-disc list-inside text-gray-600">
+                  <ul className="space-y-1 list-disc list-inside text-gray-400">
                     <li>Email ngay lập tức khi giá coin đạt mức cảnh báo</li>
                     <li>Thông tin chi tiết về coin và giá hiện tại</li>
                     <li>Link để quản lý các cảnh báo khác</li>

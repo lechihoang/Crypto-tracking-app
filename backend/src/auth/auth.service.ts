@@ -64,9 +64,7 @@ export class AuthService {
 
       // Get user info from access token
       console.log("Step 2: Getting user by token...");
-      const user = await this.auth0Service.getUserByToken(
-        tokens.access_token,
-      );
+      const user = await this.auth0Service.getUserByToken(tokens.access_token);
       console.log("Step 2 successful, user:", {
         id: user.user_id,
         email: user.email,
@@ -148,10 +146,7 @@ export class AuthService {
 
       // Verify current password by attempting to sign in
       try {
-        await this.auth0Service.signInWithPassword(
-          user.email,
-          currentPassword,
-        );
+        await this.auth0Service.signInWithPassword(user.email, currentPassword);
       } catch {
         throw new UnauthorizedException("Current password is incorrect");
       }

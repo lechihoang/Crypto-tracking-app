@@ -1,22 +1,80 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Bell, TrendingUp, TrendingDown } from 'lucide-react';
+import { Bell } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { alertsApi } from '@/lib/api';
 import { Alert } from '@/types';
+
+// LocalStorage keys
+const STORAGE_KEY = 'notification_count';
+
+// Toast notification utility functions
+const formatToastMessage = (count: number): string => {
+  if (count === 1) {
+    return '1 cảnh báo vừa được thực hiện, xem thông báo để biết chi tiết';
+  }
+  return `${count} cảnh báo vừa được thực hiện, xem thông báo để biết chi tiết`;
+};
+
+const showAlertToast = (count: number, onClickHandler: () => void) => {
+  try {
+    const message = formatToastMessage(count);
+    toast.custom(
+      (t) => (
+        <div
+          onClick={() => {
+            try {
+              onClickHandler();
+              toast.dismiss(t.id);
+            } catch (error) {
+              console.error('Error handling toast click:', error);
+            }
+          }}
+          className={`${
+            t.visible ? 'animate-enter' : 'animate-leave'
+          } max-w-md w-full bg-[#1f2937] shadow-lg rounded-xl pointer-events-auto p-4 cursor-pointer border border-[#4b5563] hover:bg-[#374151] transition-colors`}
+        >
+          <p className="text-sm text-[#f9fafb]">{message}</p>
+        </div>
+      ),
+      {
+        duration: 5000,
+        position: 'top-right',
+      }
+    );
+  } catch (error) {
+    console.error('Error showing toast:', error);
+  }
+};
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(false);
+  const [unviewedCount, setUnviewedCount] = useState(0);
+  const [previousAlertIds, setPreviousAlertIds] = useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Load from localStorage on mount
   useEffect(() => {
-    if (isOpen) {
-      loadNotifications();
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const data = JSON.parse(stored);
+        setUnviewedCount(data.count || 0);
+        setPreviousAlertIds(new Set(data.alertIds || []));
+      }
+    } catch (e) {
+      console.error('Error loading notification state:', e);
     }
-  }, [isOpen]);
+    
+    // Initial load
+    loadNotifications();
+  }, []);
 
+  // Handle click outside to close dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -33,13 +91,36 @@ export default function NotificationDropdown() {
     };
   }, [isOpen]);
 
+  // Polling logic
+  useEffect(() => {
+    if (!isOpen) {
+      // Start polling when dropdown is closed
+      pollingIntervalRef.current = setInterval(() => {
+        pollForNewAlerts();
+      }, 30000); // 30 seconds
+    } else {
+      // Stop polling when dropdown is open
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [isOpen, previousAlertIds, unviewedCount]);
+
   const loadNotifications = async () => {
     setLoading(true);
+    
     try {
       const response = await alertsApi.getTriggeredAlerts();
       if (response.data) {
-        const alerts: Alert[] = response.data.map((alert) => ({
-          id: alert.id,
+        const newAlerts: Alert[] = response.data.map((alert) => ({
+          _id: alert._id,
           coinId: alert.coinId,
           coinSymbol: alert.coinSymbol,
           coinName: alert.coinName,
@@ -50,9 +131,9 @@ export default function NotificationDropdown() {
           triggeredPrice: alert.triggeredPrice,
           triggeredAt: alert.triggeredAt,
           createdAt: alert.createdAt,
-          read: false,
         }));
-        setAlerts(alerts);
+        
+        setAlerts(newAlerts);
       }
     } catch (error) {
       console.error('Error loading alerts:', error);
@@ -61,101 +142,147 @@ export default function NotificationDropdown() {
     }
   };
 
+  const pollForNewAlerts = async () => {
+    try {
+      const response = await alertsApi.getTriggeredAlerts();
+      if (response.data) {
+        const currentAlerts: Alert[] = response.data;
+        const newCount = checkForNewAlerts(currentAlerts, previousAlertIds);
+        
+        if (newCount > 0) {
+          const newUnviewedCount = unviewedCount + newCount;
+          setUnviewedCount(newUnviewedCount);
+          
+          // Update previousAlertIds to include new alerts
+          const allIds = new Set([...previousAlertIds, ...currentAlerts.map(a => a._id)]);
+          setPreviousAlertIds(allIds);
+          
+          // Save to localStorage
+          saveToLocalStorage(newUnviewedCount, Array.from(allIds));
+          
+          // Show toast notification (only if dropdown is closed)
+          if (!isOpen) {
+            showAlertToast(newCount, handleToastClick);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error polling alerts:', error);
+    }
+  };
 
-  const unreadCount = alerts.filter(n => !n.read).length;
+  const checkForNewAlerts = (currentAlerts: Alert[], previousIds: Set<string>): number => {
+    const newAlerts = currentAlerts.filter(alert => !previousIds.has(alert._id));
+    return newAlerts.length;
+  };
+
+  const saveToLocalStorage = (count: number, alertIds: string[]) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ count, alertIds }));
+    } catch (e) {
+      console.error('Error saving notification state:', e);
+    }
+  };
+
+  const handleToastClick = () => {
+    // Open dropdown
+    setIsOpen(true);
+    
+    // Reset count
+    setUnviewedCount(0);
+    
+    // Load latest notifications
+    loadNotifications();
+    
+    // Save current alert IDs after loading
+    setTimeout(() => {
+      const alertIds = alerts.map(a => a._id);
+      setPreviousAlertIds(new Set(alertIds));
+      saveToLocalStorage(0, alertIds);
+    }, 500);
+  };
+
+  const handleToggleDropdown = () => {
+    if (!isOpen) {
+      // Opening dropdown
+      handleToastClick();
+    } else {
+      // Closing dropdown
+      setIsOpen(false);
+    }
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Icon Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        onClick={handleToggleDropdown}
+        className="relative p-2 rounded-lg hover:bg-dark-700 transition-colors"
       >
-        <Bell className="w-5 h-5 text-gray-600" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-semibold">
-            {unreadCount > 9 ? '9+' : unreadCount}
+        <Bell className="w-5 h-5 text-gray-100" />
+        {unviewedCount > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-danger-500 rounded-full flex items-center justify-center text-xs text-white font-semibold">
+            {unviewedCount > 9 ? '9+' : unviewedCount}
           </span>
         )}
       </button>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
+        <div className="absolute right-0 mt-2 w-96 bg-gray-800 rounded-xl border border-gray-600 z-50" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Thông báo</h3>
+          <div className="px-4 py-3 border-b border-gray-600/50">
+            <h3 className="text-lg font-semibold text-gray-50">Thông báo</h3>
           </div>
 
           {/* Notifications List - Scrollable */}
           <div className="max-h-[32rem] overflow-y-auto">
             {loading ? (
               <div className="py-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-sm text-gray-600">Đang tải...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-200/30 border-t-primary-500 mx-auto"></div>
+                <p className="mt-2 text-sm text-gray-100">Đang tải...</p>
               </div>
             ) : alerts.length === 0 ? (
               <div className="py-12 text-center">
-                <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600 font-medium">Không có thông báo mới</p>
-                <p className="text-sm text-gray-500 mt-1">
+                <Bell className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-50 font-medium">Không có thông báo mới</p>
+                <p className="text-sm text-gray-100 mt-1">
                   Cảnh báo giá sẽ xuất hiện ở đây
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-600/30">
                 {alerts.map((notification) => (
                   <div
-                    key={notification.id}
-                    className={`px-4 py-3 hover:bg-gray-50 transition-colors ${
-                      !notification.read ? 'bg-blue-50' : ''
-                    }`}
+                    key={notification._id}
+                    className="px-4 py-3 hover:bg-dark-700 transition-colors"
                   >
-                    <div className="flex items-start gap-3">
-                      {/* Icon */}
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-                        notification.condition === 'above'
-                          ? 'bg-green-100'
-                          : 'bg-red-100'
-                      }`}>
-                        {notification.condition === 'above' ? (
-                          <TrendingUp className="w-5 h-5 text-green-600" />
-                        ) : (
-                          <TrendingDown className="w-5 h-5 text-red-600" />
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 capitalize">
-                          {notification.coinId.replace(/-/g, ' ')}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Giá {notification.condition === 'above' ? 'vượt' : 'xuống dưới'}{' '}
-                          <span className="font-medium">
-                            ${notification.targetPrice.toLocaleString()}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-50 capitalize">
+                        {notification.coinId.replace(/-/g, ' ')}
+                      </p>
+                      <p className="text-sm text-gray-100 mt-1">
+                        Giá {notification.condition === 'above' ? 'vượt' : 'xuống dưới'}{' '}
+                        <span className="font-medium text-gray-50">
+                          ${notification.targetPrice.toLocaleString()}
+                        </span>
+                        {notification.triggeredPrice && (
+                          <span className="text-gray-100">
+                            {' '}→ ${notification.triggeredPrice.toLocaleString()}
                           </span>
-                          {notification.triggeredPrice && (
-                            <span className="text-gray-500">
-                              {' '}→ ${notification.triggeredPrice.toLocaleString()}
-                            </span>
-                          )}
-                        </p>
-                        {notification.triggeredAt && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(notification.triggeredAt).toLocaleString('vi-VN')}
-                          </p>
                         )}
-                      </div>
+                      </p>
+                      {notification.triggeredAt && (
+                        <p className="text-xs text-gray-100 mt-1">
+                          {new Date(notification.triggeredAt).toLocaleString('vi-VN')}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-
-          {/* Footer */}
-          
         </div>
       )}
     </div>

@@ -53,18 +53,18 @@ export default function ComparePage() {
   const totalPages = Math.ceil(totalCoins / pageSize);
 
   return (
-    <div className="bg-gray-50 min-h-full pb-8">
+    <div className="bg-dark-900 min-h-full pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Bảng xếp hạng tiền điện tử
+          <h2 className="text-3xl font-bold text-white mb-2">
+            Bảng giá tiền điện tử
           </h2>
           <div className="flex items-center gap-4">
-            <p className="text-gray-700 text-lg">
-              Giá tiền điện tử và dữ liệu thị trường theo thời gian thực
+            <p className="text-gray-100 text-lg">
+              Giá và dữ liệu thị trường theo thời gian thực
             </p>
             {lastUpdated && (
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-400">
                 • Cập nhật lúc {lastUpdated.toLocaleTimeString('vi-VN')}
               </span>
             )}
@@ -84,9 +84,9 @@ export default function ComparePage() {
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-2 rounded-lg bg-white hover:bg-gray-50 border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-2 rounded-lg bg-gray-800 hover:bg-dark-700 border border-gray-600/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-700" />
+              <ChevronLeft className="w-5 h-5 text-gray-100" />
             </button>
 
             {/* Page Numbers */}
@@ -106,13 +106,13 @@ export default function ComparePage() {
                   <button
                     key={1}
                     onClick={() => handlePageChange(1)}
-                    className="min-w-[48px] px-4 py-2 rounded-lg bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 text-lg font-semibold transition-all"
+                    className="min-w-[48px] px-4 py-2 rounded-lg bg-gray-800 hover:bg-dark-700 border border-gray-600/50 text-white text-lg font-semibold transition-all"
                   >
                     1
                   </button>
                 );
                 if (startPage > 2) {
-                  pages.push(<span key="dots1" className="px-2 text-gray-700 text-xl font-bold">...</span>);
+                  pages.push(<span key="dots1" className="px-2 text-gray-400 text-xl font-bold">...</span>);
                 }
               }
 
@@ -124,8 +124,8 @@ export default function ComparePage() {
                     onClick={() => handlePageChange(i)}
                     className={`min-w-[48px] px-4 py-2 rounded-lg text-lg font-bold transition-all ${
                       currentPage === i
-                        ? 'bg-blue-600 text-white border-2 border-blue-600'
-                        : 'bg-white hover:bg-gray-50 border border-gray-200 text-gray-900'
+                        ? 'bg-primary-500 hover:bg-primary-600 text-white border-2 border-primary-500'
+                        : 'bg-gray-800 hover:bg-dark-700 border border-gray-600/50 text-white'
                     }`}
                   >
                     {i}
@@ -136,13 +136,13 @@ export default function ComparePage() {
               // Last page
               if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
-                  pages.push(<span key="dots2" className="px-2 text-gray-700 text-xl font-bold">...</span>);
+                  pages.push(<span key="dots2" className="px-2 text-gray-400 text-xl font-bold">...</span>);
                 }
                 pages.push(
                   <button
                     key={totalPages}
                     onClick={() => handlePageChange(totalPages)}
-                    className="min-w-[48px] px-4 py-2 rounded-lg bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 text-lg font-semibold transition-all"
+                    className="min-w-[48px] px-4 py-2 rounded-lg bg-gray-800 hover:bg-dark-700 border border-gray-600/50 text-white text-lg font-semibold transition-all"
                   >
                     {totalPages}
                   </button>
@@ -155,9 +155,9 @@ export default function ComparePage() {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage >= totalPages}
-              className="px-3 py-2 rounded-lg bg-white hover:bg-gray-50 border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-2 rounded-lg bg-gray-800 hover:bg-dark-700 border border-gray-600/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
-              <ChevronRight className="w-5 h-5 text-gray-700" />
+              <ChevronRight className="w-5 h-5 text-gray-100" />
             </button>
           </div>
         )}

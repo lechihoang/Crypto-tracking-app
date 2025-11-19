@@ -7,7 +7,7 @@ export class PortfolioSnapshot extends Document {
   userId: string;
 
   @Prop({ required: true, type: Number })
-  totalValue: number;
+  benchmarkValue: number;
 
   // Note: createdAt is automatically added by timestamps and serves as snapshotDate
   // updatedAt is also added but snapshots should be immutable

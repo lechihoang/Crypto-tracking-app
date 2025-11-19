@@ -21,19 +21,19 @@ const LoadingSpinner = React.memo(function LoadingSpinner({
   const spinner = (
     <div className="flex flex-col items-center justify-center gap-3">
       <div
-        className={`${sizeClasses[size]} animate-spin rounded-full border-blue-200 border-t-blue-600`}
+        className={`${sizeClasses[size]} animate-spin rounded-full border-primary-200/30 border-t-primary-500`}
         role="status"
         aria-label="Loading"
       />
       {text && (
-        <p className="text-sm text-gray-600 font-medium">{text}</p>
+        <p className="text-sm text-gray-100 font-medium">{text}</p>
       )}
     </div>
   );
 
   if (fullScreen) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
         {spinner}
       </div>
     );

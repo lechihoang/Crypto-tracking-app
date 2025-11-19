@@ -14,10 +14,6 @@ export class User extends Document {
 
   @Prop({ default: true })
   emailNotifications: boolean;
-
-  // Portfolio benchmark value (merged from PortfolioBenchmark)
-  @Prop({ type: Number, default: 0 })
-  benchmarkValue: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

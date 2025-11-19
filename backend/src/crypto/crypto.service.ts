@@ -1,6 +1,5 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, HttpException, HttpStatus } from "@nestjs/common";
 import axios from "axios";
-import { Translate } from "@google-cloud/translate/build/src/v2";
 
 export interface CoinData {
   coinId: string;
@@ -73,18 +72,10 @@ export class CryptoService {
   }> = [];
   private isProcessingQueue = false;
   private readonly REQUEST_DELAY = 1000; // 1 second delay between requests
-  private translateClient: Translate;
 
   constructor() {
     // Initialize CoinGecko API key
     this.coinGeckoApiKey = process.env.COINGECKO_API_KEY || "";
-
-    // Initialize Google Cloud Translate client
-    // API key will be set via environment variable GOOGLE_TRANSLATE_API_KEY
-    const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
-    this.translateClient = new Translate({
-      key: apiKey,
-    });
   }
 
   /**
@@ -169,6 +160,22 @@ export class CryptoService {
           this.cache.set(key, { data: cached.data, timestamp: Date.now() });
           return cached.data as T;
         }
+
+        // If rate limited without cache, throw proper error
+        if (error.response?.status === 429) {
+          throw new HttpException(
+            "CoinGecko API rate limit exceeded. Please try again later.",
+            HttpStatus.TOO_MANY_REQUESTS,
+          );
+        }
+
+        // If not found
+        if (error.response?.status === 404) {
+          throw new HttpException(
+            "Cryptocurrency not found",
+            HttpStatus.NOT_FOUND,
+          );
+        }
       }
 
       // If API fails, return cached data if available
@@ -177,7 +184,11 @@ export class CryptoService {
         return cached.data as T;
       }
 
-      throw error;
+      // No cache available, throw service unavailable
+      throw new HttpException(
+        "Failed to fetch cryptocurrency data. Please try again later.",
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
   }
 
@@ -195,22 +206,31 @@ export class CryptoService {
   async getTopCoins(limit: number = 10, page: number = 1): Promise<CoinData[]> {
     const cacheKey = `top_coins_${limit}_page_${page}`;
     return this.getCachedData<CoinData[]>(cacheKey, async () => {
-      const response = await axios.get<Array<{ id: string; [key: string]: any }>>(
+      const response = await axios.get<
+        Array<{ id: string; [key: string]: any }>
+      >(
         `${this.coinGeckoAPI}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${limit}&page=${page}&price_change_percentage=1h,24h,7d&sparkline=true`,
         { headers: this.getCoinGeckoHeaders() },
       );
-      return response.data.map((coin) => ({ ...coin, coinId: coin.id } as unknown as CoinData));
+      return response.data.map(
+        (coin) => ({ ...coin, coinId: coin.id }) as unknown as CoinData,
+      );
     });
   }
 
   async searchCoins(query: string): Promise<SearchResult[]> {
     const cacheKey = `search_${query}`;
     return this.getCachedData<SearchResult[]>(cacheKey, async () => {
-      const response = await axios.get<{ coins: Array<{ id: string; [key: string]: any }> }>(
-        `${this.coinGeckoAPI}/search?query=${query}`,
-        { headers: this.getCoinGeckoHeaders() },
-      );
-      return response.data.coins.slice(0, 10).map((coin) => ({ ...coin, coinId: coin.id } as unknown as SearchResult));
+      const response = await axios.get<{
+        coins: Array<{ id: string; [key: string]: any }>;
+      }>(`${this.coinGeckoAPI}/search?query=${query}`, {
+        headers: this.getCoinGeckoHeaders(),
+      });
+      return response.data.coins
+        .slice(0, 10)
+        .map(
+          (coin) => ({ ...coin, coinId: coin.id }) as unknown as SearchResult,
+        );
     });
   }
 
@@ -221,20 +241,79 @@ export class CryptoService {
         `${this.coinGeckoAPI}/coins/${coinId}?localization=false&tickers=true&community_data=false&developer_data=false`,
         { headers: this.getCoinGeckoHeaders() },
       );
-      return { ...response.data, coinId: response.data.id } as unknown as CoinDetails;
+      return {
+        ...response.data,
+        coinId: response.data.id,
+      } as unknown as CoinDetails;
     });
   }
 
   async getCoinMarketData(coinId: string): Promise<CoinData | null> {
     const cacheKey = `market_data_${coinId}`;
     return this.getCachedData<CoinData | null>(cacheKey, async () => {
-      const response = await axios.get<Array<{ id: string; [key: string]: any }>>(
+      const response = await axios.get<
+        Array<{ id: string; [key: string]: any }>
+      >(
         `${this.coinGeckoAPI}/coins/markets?vs_currency=usd&ids=${coinId}&price_change_percentage=1h,24h,7d,30d`,
         { headers: this.getCoinGeckoHeaders() },
       );
       // Returns an array, we want the first item
       const coin = response.data[0];
-      return coin ? ({ ...coin, coinId: coin.id } as unknown as CoinData) : null;
+      return coin
+        ? ({ ...coin, coinId: coin.id } as unknown as CoinData)
+        : null;
+    });
+  }
+
+  /**
+   * Get basic info (name, symbol, image) for multiple coins at once
+   * This is optimized for portfolio holdings display
+   */
+  async getCoinsBasicInfo(coinIds: string[]): Promise<
+    Record<
+      string,
+      {
+        name: string;
+        symbol: string;
+        image: string;
+      }
+    >
+  > {
+    if (coinIds.length === 0) {
+      return {};
+    }
+
+    const cacheKey = `basic_info_${coinIds.sort().join(",")}`;
+    return this.getCachedData<
+      Record<string, { name: string; symbol: string; image: string }>
+    >(cacheKey, async () => {
+      const response = await axios.get<
+        Array<{
+          id: string;
+          name: string;
+          symbol: string;
+          image: string;
+          [key: string]: any;
+        }>
+      >(
+        `${this.coinGeckoAPI}/coins/markets?vs_currency=usd&ids=${coinIds.join(",")}&per_page=${coinIds.length}`,
+        { headers: this.getCoinGeckoHeaders() },
+      );
+
+      // Convert array to record for easy lookup
+      const result: Record<
+        string,
+        { name: string; symbol: string; image: string }
+      > = {};
+      response.data.forEach((coin) => {
+        result[coin.id] = {
+          name: coin.name,
+          symbol: coin.symbol,
+          image: coin.image,
+        };
+      });
+
+      return result;
     });
   }
 
@@ -300,78 +379,5 @@ export class CryptoService {
         return [];
       }
     });
-  }
-
-  /**
-   * Translate coin description from English to Vietnamese using Google Cloud Translation API
-   */
-  async translateDescription(text: string): Promise<string> {
-    if (!text || text.trim().length === 0) {
-      return text;
-    }
-
-    try {
-      // Google Cloud Translate API
-      const [translation] = await this.translateClient.translate(text, "vi");
-      return translation;
-    } catch (error: unknown) {
-      console.error("Translation error:", error);
-      // Return original text if translation fails
-      return text;
-    }
-  }
-
-  /**
-   * Get coin details with translated description
-   */
-  async getCoinDetailsVietnamese(coinId: string): Promise<CoinDetails> {
-    const coinDetails = await this.getCoinDetails(coinId);
-
-    if (coinDetails?.description?.en) {
-      try {
-        coinDetails.description.vi = await this.translateDescription(
-          coinDetails.description.en,
-        );
-      } catch (error: unknown) {
-        console.error("Failed to translate description:", error);
-        coinDetails.description.vi = coinDetails.description.en;
-      }
-    }
-
-    return coinDetails;
-  }
-
-  /**
-   * Get latest crypto news with Vietnamese translation
-   */
-  async getNewsVietnamese(limit: number = 10): Promise<NewsArticle[]> {
-    const news = await this.getNews(limit);
-
-    // Translate title and body for each news article
-    const translatedNews = await Promise.all(
-      news.map(async (article) => {
-        try {
-          const [translatedTitle, translatedBody] = await Promise.all([
-            this.translateDescription(article.title),
-            this.translateDescription(article.body.slice(0, 500)), // Translate first 500 chars for performance
-          ]);
-
-          return {
-            ...article,
-            titleVi: translatedTitle,
-            bodyVi: translatedBody,
-          };
-        } catch (error: unknown) {
-          console.error("Failed to translate news article:", error);
-          return {
-            ...article,
-            titleVi: article.title,
-            bodyVi: article.body,
-          };
-        }
-      }),
-    );
-
-    return translatedNews;
   }
 }

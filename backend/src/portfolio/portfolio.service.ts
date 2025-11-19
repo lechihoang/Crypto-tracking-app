@@ -2,85 +2,220 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Logger,
+  HttpException,
+  HttpStatus,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { PortfolioHolding } from "../schemas/portfolio-holding.schema";
 import { PortfolioSnapshot } from "../schemas/portfolio-snapshot.schema";
-import { User } from "../schemas/user.schema";
 import { CryptoService } from "../crypto/crypto.service";
 import { CreateHoldingDto } from "./dto/create-holding.dto";
 import { UpdateHoldingDto } from "./dto/update-holding.dto";
 
 @Injectable()
 export class PortfolioService {
+  private readonly logger = new Logger(PortfolioService.name);
+
   constructor(
     @InjectModel(PortfolioHolding.name)
     private holdingModel: Model<PortfolioHolding>,
     @InjectModel(PortfolioSnapshot.name)
     private snapshotModel: Model<PortfolioSnapshot>,
-    @InjectModel(User.name)
-    private userModel: Model<User>,
-    private cryptoService: CryptoService
+    private cryptoService: CryptoService,
   ) {}
 
+  // ============================================================================
+  // Public API Methods - Holdings Management
+  // ============================================================================
+
+  /**
+   * Get all portfolio holdings for a user with coin information populated
+   * @param userId - The user ID to fetch holdings for
+   * @returns Array of portfolio holdings with coin details
+   * @throws HttpException if fetch fails
+   */
   async getHoldings(userId: string): Promise<PortfolioHolding[]> {
-    return this.holdingModel.find({ userId }).sort({ createdAt: -1 }).exec();
+    try {
+      this.logger.debug(`Fetching holdings for user ${userId}`);
+
+      const holdings = await this.holdingModel
+        .find({ userId })
+        .sort({ createdAt: -1 })
+        .exec();
+
+      this.logger.debug(`Found ${holdings.length} holdings for user ${userId}`);
+
+      return this.populateCoinInfo(holdings);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to fetch holdings for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new HttpException(
+        "Failed to fetch portfolio holdings. Please try again later.",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async addHolding(
     userId: string,
-    createHoldingDto: CreateHoldingDto
+    createHoldingDto: CreateHoldingDto,
   ): Promise<PortfolioHolding> {
-    // Check if holding already exists
-    const existingHolding = await this.holdingModel
-      .findOne({ userId, coinId: createHoldingDto.coinId })
-      .exec();
+    try {
+      this.logger.debug(
+        `Adding holding for user ${userId}, coin ${createHoldingDto.coinId}`,
+      );
 
-    if (existingHolding) {
-      throw new ConflictException(
-        "Holding for this coin already exists. Use update instead."
+      // Check if holding already exists
+      const existingHolding = await this.holdingModel
+        .findOne({ userId, coinId: createHoldingDto.coinId })
+        .exec();
+
+      if (existingHolding) {
+        this.logger.warn(
+          `Holding for coin ${createHoldingDto.coinId} already exists for user ${userId}`,
+        );
+        throw new ConflictException(
+          "Holding for this coin already exists. Use update instead.",
+        );
+      }
+
+      const holding = new this.holdingModel({
+        userId,
+        coinId: createHoldingDto.coinId,
+        quantity: createHoldingDto.quantity,
+        averageBuyPrice: createHoldingDto.averageBuyPrice,
+        notes: createHoldingDto.notes,
+      });
+
+      const savedHolding = await holding.save();
+
+      this.logger.debug(
+        `Successfully added holding ${savedHolding._id} for user ${userId}`,
+      );
+
+      // Populate coin info before returning
+      const populated = await this.populateCoinInfo([savedHolding]);
+      return populated[0];
+    } catch (error: unknown) {
+      // Re-throw known exceptions
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to add holding for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new HttpException(
+        "Failed to add holding. Please try again later.",
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-
-    const holding = new this.holdingModel({
-      userId,
-      ...createHoldingDto,
-    });
-
-    return holding.save();
   }
 
   async updateHolding(
     userId: string,
     holdingId: string,
-    updateHoldingDto: UpdateHoldingDto
+    updateHoldingDto: UpdateHoldingDto,
   ): Promise<PortfolioHolding> {
-    const holding = await this.holdingModel
-      .findOne({ _id: holdingId, userId })
-      .exec();
+    try {
+      this.logger.debug(`Updating holding ${holdingId} for user ${userId}`);
 
-    if (!holding) {
-      throw new NotFoundException("Holding not found");
+      const holding = await this.holdingModel
+        .findOne({ _id: holdingId, userId })
+        .exec();
+
+      if (!holding) {
+        this.logger.warn(`Holding ${holdingId} not found for user ${userId}`);
+        throw new NotFoundException("Holding not found");
+      }
+
+      Object.assign(holding, updateHoldingDto);
+      const savedHolding = await holding.save();
+
+      this.logger.debug(
+        `Successfully updated holding ${holdingId} for user ${userId}`,
+      );
+
+      // Populate coin info before returning
+      const populated = await this.populateCoinInfo([savedHolding]);
+      return populated[0];
+    } catch (error: unknown) {
+      // Re-throw known exceptions
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to update holding ${holdingId} for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new HttpException(
+        "Failed to update holding. Please try again later.",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-
-    Object.assign(holding, updateHoldingDto);
-    return holding.save();
   }
 
   async removeHolding(userId: string, holdingId: string): Promise<void> {
-    const result = await this.holdingModel
-      .deleteOne({
-        _id: holdingId,
-        userId,
-      })
-      .exec();
+    try {
+      this.logger.debug(`Removing holding ${holdingId} for user ${userId}`);
 
-    if (result.deletedCount === 0) {
-      throw new NotFoundException("Holding not found");
+      const result = await this.holdingModel
+        .deleteOne({
+          _id: holdingId,
+          userId,
+        })
+        .exec();
+
+      if (result.deletedCount === 0) {
+        this.logger.warn(`Holding ${holdingId} not found for user ${userId}`);
+        throw new NotFoundException("Holding not found");
+      }
+
+      this.logger.debug(
+        `Successfully removed holding ${holdingId} for user ${userId}`,
+      );
+    } catch (error: unknown) {
+      // Re-throw known exceptions
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to remove holding ${holdingId} for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new HttpException(
+        "Failed to remove holding. Please try again later.",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
+  /**
+   * Calculate the current total portfolio value and individual holding values
+   * Includes profit/loss calculations based on average buy price
+   * @param userId - The user ID to calculate portfolio value for
+   * @returns Object containing total value and enriched holdings with current prices and P/L
+   * @throws HttpException if calculation fails or prices cannot be fetched
+   */
   async getPortfolioValue(userId: string): Promise<{
     totalValue: number;
     holdings: Array<{
@@ -91,74 +226,97 @@ export class PortfolioService {
       profitLossPercentage?: number;
     }>;
   }> {
-    const holdings = await this.getHoldings(userId);
+    try {
+      this.logger.debug(`Calculating portfolio value for user ${userId}`);
 
-    if (holdings.length === 0) {
-      return { totalValue: 0, holdings: [] };
-    }
+      // getHoldings already populates coin info and handles errors
+      const holdings = await this.getHoldings(userId);
 
-    // Get current prices for all coins
-    const coinIds = holdings.map((h) => h.coinId);
-    const prices = await this.cryptoService.getCoinPrices(coinIds);
-
-    let totalValue = 0;
-    const enrichedHoldings = holdings.map((holding) => {
-      const priceData = prices[holding.coinId];
-      const currentPrice = priceData?.usd || 0;
-      const currentValue = holding.quantity * currentPrice;
-
-      totalValue += currentValue;
-
-      let profitLoss: number | undefined;
-      let profitLossPercentage: number | undefined;
-
-      if (holding.averageBuyPrice) {
-        const totalCost = holding.quantity * holding.averageBuyPrice;
-        profitLoss = currentValue - totalCost;
-        profitLossPercentage =
-          totalCost > 0 ? (profitLoss / totalCost) * 100 : 0;
+      if (holdings.length === 0) {
+        this.logger.debug(`No holdings found for user ${userId}`);
+        return { totalValue: 0, holdings: [] };
       }
 
-      return {
-        holding,
-        currentPrice,
-        currentValue,
-        profitLoss,
-        profitLossPercentage,
-      };
-    });
+      // Get current prices for all coins
+      const coinIds = holdings.map((h) => h.coinId);
 
-    return { totalValue, holdings: enrichedHoldings };
+      let prices: Record<string, { usd: number }>;
+      try {
+        prices = await this.cryptoService.getCoinPrices(coinIds);
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        this.logger.error(
+          `Failed to fetch coin prices for user ${userId}: ${errorMessage}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+
+        throw new HttpException(
+          "Failed to fetch current coin prices. Please try again later.",
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+
+      let totalValue = 0;
+      const enrichedHoldings = holdings.map((holding) => {
+        const priceData = prices[holding.coinId];
+        const currentPrice = priceData?.usd || 0;
+        const currentValue = holding.quantity * currentPrice;
+
+        totalValue += currentValue;
+
+        let profitLoss: number | undefined;
+        let profitLossPercentage: number | undefined;
+
+        if (holding.averageBuyPrice) {
+          const totalCost = holding.quantity * holding.averageBuyPrice;
+          profitLoss = currentValue - totalCost;
+          profitLossPercentage =
+            totalCost > 0 ? (profitLoss / totalCost) * 100 : 0;
+        }
+
+        return {
+          holding, // Already has coinName, coinSymbol, coinImage populated
+          currentPrice,
+          currentValue,
+          profitLoss,
+          profitLossPercentage,
+        };
+      });
+
+      this.logger.debug(
+        `Successfully calculated portfolio value for user ${userId}: $${totalValue.toFixed(2)}`,
+      );
+
+      return { totalValue, holdings: enrichedHoldings };
+    } catch (error: unknown) {
+      // Re-throw HttpException (from getHoldings or price fetch)
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to calculate portfolio value for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new HttpException(
+        "Failed to calculate portfolio value. Please try again later.",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
-  async createSnapshot(
-    userId: string,
-    totalValue: number
-  ): Promise<PortfolioSnapshot> {
-    const snapshot = new this.snapshotModel({
-      userId,
-      totalValue,
-    });
-
-    return snapshot.save();
-  }
-
-  async getPortfolioHistory(
-    userId: string,
-    days: number = 30
-  ): Promise<PortfolioSnapshot[]> {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    return this.snapshotModel
-      .find({
-        userId,
-        snapshotDate: { $gte: startDate },
-      })
-      .sort({ snapshotDate: 1 })
-      .exec();
-  }
-
+  /**
+   * Get historical portfolio value over a specified time period
+   * Calculates portfolio value at each timestamp based on historical prices
+   * @param userId - The user ID to fetch history for
+   * @param days - Number of days of history to fetch (default: 30)
+   * @returns Object containing array of historical data points with timestamp, value, and date
+   * @throws HttpException if history calculation fails
+   */
   async getPortfolioValueHistory(userId: string, days: number = 30) {
     const holdings = await this.holdingModel.find({ userId }).exec();
 
@@ -167,136 +325,319 @@ export class PortfolioService {
     }
 
     try {
-      // Get historical prices for all coins in portfolio
       const coinIds = holdings.map((h) => h.coinId);
-      const uniqueCoinIds = [...new Set(coinIds)];
 
-      // Fetch price history for all coins with delays to respect rate limits
-      const priceHistories: Array<{
-        coinId: string;
-        prices: Array<{ timestamp: number; price: number }>;
-      }> = [];
+      this.logger.debug(
+        `Fetching portfolio value history for user ${userId} with ${coinIds.length} holdings over ${days} days`,
+      );
 
-      for (const coinId of uniqueCoinIds) {
-        try {
-          const response = await this.cryptoService.getCoinPriceHistory(
-            coinId,
-            days
-          );
-          priceHistories.push({ coinId, prices: response.prices });
-        } catch (error: unknown) {
-          console.error(`Failed to fetch price history for ${coinId}:`, error);
-          priceHistories.push({ coinId, prices: [] });
-        }
+      const priceHistories = await this.fetchPriceHistories(coinIds, days);
+      const { priceMap, sortedTimestamps } = this.buildPriceMap(priceHistories);
+      const portfolioHistory = this.calculatePortfolioHistory(
+        holdings,
+        priceMap,
+        sortedTimestamps,
+      );
 
-        // Add small delay between requests to avoid overwhelming the API
-        if (uniqueCoinIds.indexOf(coinId) < uniqueCoinIds.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
-      }
-
-      // Create a map of coin prices by timestamp
-      const priceMap = new Map<string, Map<number, number>>();
-      priceHistories.forEach(({ coinId, prices }) => {
-        const coinPriceMap = new Map<number, number>();
-        prices.forEach((priceData) => {
-          coinPriceMap.set(priceData.timestamp, priceData.price);
-        });
-        priceMap.set(coinId, coinPriceMap);
-      });
-
-      // Get all unique timestamps and sort them
-      const allTimestamps = new Set<number>();
-      priceHistories.forEach(({ prices }) => {
-        prices.forEach((priceData) => {
-          allTimestamps.add(priceData.timestamp);
-        });
-      });
-
-      const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b);
-
-      // Calculate portfolio value at each timestamp
-      const portfolioHistory = sortedTimestamps.map((timestamp) => {
-        let totalValue = 0;
-
-        holdings.forEach((holding) => {
-          const coinPriceMap = priceMap.get(holding.coinId);
-          if (coinPriceMap) {
-            // Find the closest price to this timestamp
-            let closestPrice = 0;
-            let minTimeDiff = Infinity;
-
-            for (const [priceTimestamp, price] of coinPriceMap.entries()) {
-              const timeDiff = Math.abs(priceTimestamp - timestamp);
-              if (timeDiff < minTimeDiff) {
-                minTimeDiff = timeDiff;
-                closestPrice = price;
-              }
-            }
-
-            totalValue += Number(holding.quantity) * closestPrice;
-          }
-        });
-
-        return {
-          timestamp,
-          totalValue,
-          date: new Date(timestamp).toISOString(),
-        };
-      });
+      this.logger.debug(
+        `Successfully calculated portfolio history with ${portfolioHistory.length} data points`,
+      );
 
       return { data: portfolioHistory };
     } catch (error: unknown) {
-      console.error("Error calculating portfolio value history:", error);
-      return { data: [] };
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to calculate portfolio value history for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new HttpException(
+        "Failed to calculate portfolio value history. Please try again later.",
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
   }
 
+  // ============================================================================
+  // Public API Methods - Benchmark Management
+  // ============================================================================
+
   async setBenchmark(
-  userId: string,
-  benchmarkValue: number,
-): Promise<{ userId: string; benchmarkValue: number }> {
-  // Update benchmarkValue in User document
-  const user = await this.userModel.findOneAndUpdate(
-    { userId },
-    { benchmarkValue },
-    { new: true, upsert: true }
-  ).exec();
+    userId: string,
+    benchmarkValue: number,
+  ): Promise<{ userId: string; benchmarkValue: number }> {
+    try {
+      this.logger.debug(
+        `Setting benchmark for user ${userId} to ${benchmarkValue}`,
+      );
 
-  if (!user) {
-    throw new NotFoundException('User not found');
+      // Update or create a single benchmark document for this user
+      const snapshot = await this.snapshotModel
+        .findOneAndUpdate(
+          { userId },
+          { benchmarkValue },
+          { new: true, upsert: true },
+        )
+        .exec();
+
+      if (!snapshot) {
+        this.logger.error(`Failed to set benchmark for user ${userId}`);
+        throw new NotFoundException("Failed to set benchmark");
+      }
+
+      this.logger.debug(`Successfully set benchmark for user ${userId}`);
+
+      return {
+        userId: snapshot.userId,
+        benchmarkValue: snapshot.benchmarkValue,
+      };
+    } catch (error: unknown) {
+      // Re-throw known exceptions
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to set benchmark for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new HttpException(
+        "Failed to set benchmark. Please try again later.",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
-  return {
-    userId: user.userId,
-    benchmarkValue: user.benchmarkValue,
-  };
-}
+  async getBenchmark(userId: string): Promise<{
+    userId: string;
+    benchmarkValue: number;
+    updatedAt: Date;
+  } | null> {
+    try {
+      this.logger.debug(`Fetching benchmark for user ${userId}`);
 
-  async getBenchmark(userId: string): Promise<{ userId: string; benchmarkValue: number; updatedAt: Date } | null> {
-  const user = await this.userModel.findOne({ userId }).exec();
+      // Get the single benchmark document for this user
+      const snapshot = await this.snapshotModel.findOne({ userId }).exec();
 
-  if (!user) {
-    return null;
+      if (!snapshot) {
+        this.logger.debug(`No benchmark found for user ${userId}`);
+        return null;
+      }
+
+      return {
+        userId: snapshot.userId,
+        benchmarkValue: snapshot.benchmarkValue,
+        updatedAt: (snapshot as any).updatedAt,
+      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to fetch benchmark for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new HttpException(
+        "Failed to fetch benchmark. Please try again later.",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
-  return {
-    userId: user.userId,
-    benchmarkValue: user.benchmarkValue,
-    updatedAt: (user as any).updatedAt,
-  };
-}
+  async deleteBenchmark(userId: string): Promise<void> {
+    try {
+      this.logger.debug(`Deleting benchmark for user ${userId}`);
 
-async deleteBenchmark(userId: string): Promise<void> {
-  // Set benchmarkValue back to 0 instead of deleting
-  const user = await this.userModel.findOneAndUpdate(
-    { userId },
-    { benchmarkValue: 0 },
-    { new: true }
-  ).exec();
+      // Set benchmarkValue to 0 instead of deleting
+      const snapshot = await this.snapshotModel
+        .findOneAndUpdate({ userId }, { benchmarkValue: 0 }, { new: true })
+        .exec();
 
-  if (!user) {
-    throw new NotFoundException('User not found');
+      if (!snapshot) {
+        this.logger.warn(`No benchmark found for user ${userId}`);
+        throw new NotFoundException("No benchmark found");
+      }
+
+      this.logger.debug(`Successfully deleted benchmark for user ${userId}`);
+    } catch (error: unknown) {
+      // Re-throw known exceptions
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to delete benchmark for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new HttpException(
+        "Failed to delete benchmark. Please try again later.",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
-}
+
+  // ============================================================================
+  // Private Helper Methods
+  // ============================================================================
+
+  /**
+   * Helper method to populate coin info (name, symbol, image) from CryptoService
+   */
+  private async populateCoinInfo(
+    holdings: PortfolioHolding[],
+  ): Promise<PortfolioHolding[]> {
+    if (holdings.length === 0) {
+      return holdings;
+    }
+
+    try {
+      const coinIds = holdings.map((h) => h.coinId);
+      const coinsInfo = await this.cryptoService.getCoinsBasicInfo(coinIds);
+
+      return holdings.map((holding) => {
+        const coinInfo = coinsInfo[holding.coinId];
+        const holdingObj = holding.toObject();
+
+        if (coinInfo) {
+          // Add coin info to holding object (not stored in DB, just for response)
+          return {
+            ...holdingObj,
+            coinName: coinInfo.name,
+            coinSymbol: coinInfo.symbol,
+            coinImage: coinInfo.image,
+          } as PortfolioHolding;
+        }
+
+        return holdingObj as PortfolioHolding;
+      });
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to populate coin info for holdings: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      // Return holdings without coin info rather than failing completely
+      this.logger.warn(
+        "Returning holdings without coin info due to API failure",
+      );
+      return holdings.map((holding) => holding.toObject() as PortfolioHolding);
+    }
+  }
+
+  /**
+   * Fetch price histories for all unique coins in the portfolio
+   */
+  private async fetchPriceHistories(
+    coinIds: string[],
+    days: number,
+  ): Promise<
+    Array<{
+      coinId: string;
+      prices: Array<{ timestamp: number; price: number }>;
+    }>
+  > {
+    const uniqueCoinIds = [...new Set(coinIds)];
+    const priceHistories: Array<{
+      coinId: string;
+      prices: Array<{ timestamp: number; price: number }>;
+    }> = [];
+
+    for (const coinId of uniqueCoinIds) {
+      try {
+        const response = await this.cryptoService.getCoinPriceHistory(
+          coinId,
+          days,
+        );
+        priceHistories.push({ coinId, prices: response.prices });
+      } catch (error: unknown) {
+        this.logger.warn(
+          `Failed to fetch price history for ${coinId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+        priceHistories.push({ coinId, prices: [] });
+      }
+
+      // Add small delay between requests to avoid overwhelming the API
+      if (uniqueCoinIds.indexOf(coinId) < uniqueCoinIds.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+
+    return priceHistories;
+  }
+
+  /**
+   * Build a map of coin prices organized by timestamp
+   */
+  private buildPriceMap(
+    priceHistories: Array<{
+      coinId: string;
+      prices: Array<{ timestamp: number; price: number }>;
+    }>,
+  ): {
+    priceMap: Map<string, Map<number, number>>;
+    sortedTimestamps: number[];
+  } {
+    const priceMap = new Map<string, Map<number, number>>();
+    const allTimestamps = new Set<number>();
+
+    priceHistories.forEach(({ coinId, prices }) => {
+      const coinPriceMap = new Map<number, number>();
+      prices.forEach((priceData) => {
+        coinPriceMap.set(priceData.timestamp, priceData.price);
+        allTimestamps.add(priceData.timestamp);
+      });
+      priceMap.set(coinId, coinPriceMap);
+    });
+
+    const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b);
+
+    return { priceMap, sortedTimestamps };
+  }
+
+  /**
+   * Calculate portfolio value at each timestamp
+   */
+  private calculatePortfolioHistory(
+    holdings: PortfolioHolding[],
+    priceMap: Map<string, Map<number, number>>,
+    sortedTimestamps: number[],
+  ): Array<{ timestamp: number; totalValue: number; date: string }> {
+    return sortedTimestamps.map((timestamp) => {
+      let totalValue = 0;
+
+      holdings.forEach((holding) => {
+        const coinPriceMap = priceMap.get(holding.coinId);
+        if (coinPriceMap) {
+          // Find the closest price to this timestamp
+          let closestPrice = 0;
+          let minTimeDiff = Infinity;
+
+          for (const [priceTimestamp, price] of coinPriceMap.entries()) {
+            const timeDiff = Math.abs(priceTimestamp - timestamp);
+            if (timeDiff < minTimeDiff) {
+              minTimeDiff = timeDiff;
+              closestPrice = price;
+            }
+          }
+
+          totalValue += Number(holding.quantity) * closestPrice;
+        }
+      });
+
+      return {
+        timestamp,
+        totalValue,
+        date: new Date(timestamp).toISOString(),
+      };
+    });
+  }
 }

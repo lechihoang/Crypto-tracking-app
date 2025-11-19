@@ -1,8 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import {
-  UnauthorizedException,
-  ConflictException,
-} from "@nestjs/common";
+import { UnauthorizedException, ConflictException } from "@nestjs/common";
 import { AuthService } from "../auth.service";
 import { Auth0Service } from "../auth0.service";
 import {

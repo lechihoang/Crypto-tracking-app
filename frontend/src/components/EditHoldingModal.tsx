@@ -37,19 +37,12 @@ export default function EditHoldingModal({ isOpen, holding, onClose, onSuccess }
 
     try {
       const updatePromise = (async () => {
-        const result = await portfolioApi.updateHolding(holding.id, {
+        const result = await portfolioApi.updateHolding(holding._id, {
           quantity: parseFloat(quantity),
         });
 
         if (result.error) {
           throw new Error(result.error);
-        }
-
-        // Create a snapshot after updating holding
-        try {
-          await portfolioApi.createSnapshot();
-        } catch (error) {
-          console.log('Failed to create snapshot:', error);
         }
 
         return result;
@@ -83,14 +76,14 @@ export default function EditHoldingModal({ isOpen, holding, onClose, onSuccess }
   if (!isOpen || !holding) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-gray-800 border border-gray-600/50 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Sửa {holding.coinName}</h3>
+        <div className="flex items-center justify-between p-6 border-b border-gray-600/50">
+          <h3 className="text-lg font-semibold text-white">Sửa {holding.coinName}</h3>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-300 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -99,15 +92,15 @@ export default function EditHoldingModal({ isOpen, holding, onClose, onSuccess }
         {/* Content */}
         <div className="p-6">
           {/* Coin Info */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="mb-6 p-4 bg-gray-700 border border-gray-600/50 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-gray-900">{holding.coinName}</p>
-                <p className="text-sm text-gray-600">{holding.coinSymbol.toUpperCase()}</p>
+                <p className="font-semibold text-white">{holding.coinName}</p>
+                <p className="text-sm text-gray-300">{holding.coinSymbol.toUpperCase()}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-600">Giá hiện tại</p>
-                <p className="font-semibold text-gray-900">
+                <p className="text-sm text-gray-400">Giá hiện tại</p>
+                <p className="font-semibold text-white">
                   ${Number(holding.currentPrice).toFixed(2)}
                 </p>
               </div>
@@ -117,7 +110,7 @@ export default function EditHoldingModal({ isOpen, holding, onClose, onSuccess }
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Quantity */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Số lượng *
               </label>
               <input
@@ -127,7 +120,7 @@ export default function EditHoldingModal({ isOpen, holding, onClose, onSuccess }
                 step="any"
                 min="0.00000001"
                 placeholder="0.00000000"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-500"
                 required
               />
             </div>
@@ -137,14 +130,14 @@ export default function EditHoldingModal({ isOpen, holding, onClose, onSuccess }
               <button
                 type="button"
                 onClick={handleClose}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={loading || !quantity}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
                   <Loader className="w-4 h-4 animate-spin mx-auto" />

@@ -86,15 +86,15 @@ describe("Auth0Service", () => {
 
       const result = await service.signInWithPassword(email, password);
 
-      expect(
-        mockAuthenticationClient.oauth.passwordGrant,
-      ).toHaveBeenCalledWith({
-        username: email,
-        password,
-        realm: "Username-Password-Authentication",
-        scope: "openid profile email",
-        // audience is not included for password grant
-      });
+      expect(mockAuthenticationClient.oauth.passwordGrant).toHaveBeenCalledWith(
+        {
+          username: email,
+          password,
+          realm: "Username-Password-Authentication",
+          scope: "openid profile email",
+          // audience is not included for password grant
+        },
+      );
       expect(result).toEqual(mockResponse.data);
     });
 

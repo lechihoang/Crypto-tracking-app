@@ -336,8 +336,117 @@ export class ScraperService {
   }
 
   /**
+   * Get top 100 cryptocurrencies by market cap
+   * Returns detailed market data including price, volume, and changes
+   */
+  async getTopCoinsData(): Promise<ScrapedContent[]> {
+    console.log(`[CoinGecko API] Fetching top 100 coins by market cap...`);
+
+    const content: ScrapedContent[] = [];
+
+    try {
+      interface CoinMarketData {
+        id: string;
+        symbol: string;
+        name: string;
+        current_price: number | null;
+        market_cap: number | null;
+        market_cap_rank: number | null;
+        total_volume: number | null;
+        price_change_percentage_24h: number | null;
+      }
+
+      const response = await axios.get<CoinMarketData[]>(
+        `${this.coinGeckoBaseUrl}/coins/markets`,
+        {
+          headers: this.getCoinGeckoHeaders(),
+          params: {
+            vs_currency: "usd",
+            order: "market_cap_desc",
+            per_page: 100,
+            page: 1,
+            sparkline: false,
+          },
+          timeout: 10000,
+        },
+      );
+
+      const coins: CoinMarketData[] = response.data;
+      console.log(`[CoinGecko API] Found ${coins.length} coins`);
+
+      for (const coin of coins) {
+        try {
+          // Skip coins without price data
+          if (coin.current_price === null) {
+            console.log(
+              `[CoinGecko API] ⚠ Skipping ${coin.name} - no price data`,
+            );
+            continue;
+          }
+
+          // Build comprehensive market data description
+          let coinContent = `${coin.name} (${coin.symbol.toUpperCase()})`;
+
+          if (coin.market_cap_rank) {
+            coinContent += ` is currently ranked #${coin.market_cap_rank} by market capitalization`;
+          }
+
+          if (coin.market_cap) {
+            coinContent += ` at ${this.formatCurrency(coin.market_cap)}`;
+          }
+
+          coinContent += `.`;
+
+          // Add current price
+          coinContent += ` The current price is ${this.formatCurrency(coin.current_price)}`;
+
+          // Add price change if available
+          if (coin.price_change_percentage_24h !== null) {
+            coinContent += `, ${this.formatPriceChange(coin.price_change_percentage_24h)} in the last 24 hours`;
+          }
+
+          coinContent += `.`;
+
+          // Add trading volume if available
+          if (coin.total_volume) {
+            coinContent += ` The 24-hour trading volume is ${this.formatCurrency(coin.total_volume)}.`;
+          }
+
+          content.push({
+            title: `${coin.name} (${coin.symbol.toUpperCase()}) - Market Data`,
+            content: coinContent,
+            url: `https://www.coingecko.com/en/coins/${coin.id}`,
+            source: "CoinGecko API - Markets",
+            publishedAt: new Date(),
+          });
+
+          console.log(
+            `[CoinGecko API] ✓ Added coin: ${coin.name} (${coin.symbol.toUpperCase()})`,
+          );
+        } catch (error: unknown) {
+          console.error(
+            `[CoinGecko API] Error processing coin ${coin.name}:`,
+            error instanceof Error ? error.message : String(error),
+          );
+        }
+      }
+
+      console.log(
+        `[CoinGecko API] Completed. ${content.length} coins added`,
+      );
+      return content;
+    } catch (error: unknown) {
+      console.error(
+        "[CoinGecko API] Top coins error:",
+        error instanceof Error ? error.message : String(error),
+      );
+      return [];
+    }
+  }
+
+  /**
    * Get all CoinGecko data at once
-   * Combines coins, categories, trending, and global data
+   * Combines top coins, categories, trending, and global data
    */
   async getAllCoinGeckoData(): Promise<ScrapedContent[]> {
     console.log(`[CoinGecko API] Fetching ALL data...`);
@@ -346,23 +455,24 @@ export class ScraperService {
 
     try {
       // Fetch all data sources
-      const [categories, trending, global] = await Promise.all([
+      const [categories, trending, topCoins, global] = await Promise.all([
         this.getCategoriesData(),
         this.getTrendingData(),
+        this.getTopCoinsData(),
         this.getGlobalData(),
       ]);
 
-      // allContent.push(...coins);
       allContent.push(...categories);
       allContent.push(...trending);
+      allContent.push(...topCoins);
       allContent.push(...global);
 
       console.log(
         `[CoinGecko API] Total content collected: ${allContent.length} items`,
       );
-      // console.log(`  - Coins: ${coins.length}`);
       console.log(`  - Categories: ${categories.length}`);
       console.log(`  - Trending: ${trending.length}`);
+      console.log(`  - Top Coins: ${topCoins.length}`);
       console.log(`  - Global: ${global.length}`);
 
       return allContent;
@@ -373,6 +483,30 @@ export class ScraperService {
       );
       return allContent; // Return whatever we managed to fetch
     }
+  }
+
+  /**
+   * Helper: Format currency values into human-readable format
+   */
+  private formatCurrency(value: number): string {
+    if (value >= 1e9) {
+      return `$${(value / 1e9).toFixed(2)} billion`;
+    }
+    if (value >= 1e6) {
+      return `$${(value / 1e6).toFixed(2)} million`;
+    }
+    if (value >= 1e3) {
+      return `$${(value / 1e3).toFixed(2)} thousand`;
+    }
+    return `$${value.toFixed(2)}`;
+  }
+
+  /**
+   * Helper: Format price change percentage into human-readable format
+   */
+  private formatPriceChange(change: number): string {
+    const direction = change >= 0 ? "up" : "down";
+    return `${direction} ${Math.abs(change).toFixed(2)}%`;
   }
 
   /**

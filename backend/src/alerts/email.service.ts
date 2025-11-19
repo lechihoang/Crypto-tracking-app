@@ -65,16 +65,43 @@ export class EmailService {
     alert: PriceAlert,
     currentPrice: number,
   ): Promise<void> {
-    // Check if user has email notifications enabled
-    const isEnabled = await this.userService.isEmailNotificationEnabled(
-      alert.userId,
-    );
+    if (!userEmail) {
+      this.logger.error("User email is required to send price alert");
+      throw new Error("User email is required");
+    }
 
-    if (!isEnabled) {
-      this.logger.log(
-        `Email notification skipped for user ${alert.userId} - notifications disabled`,
+    if (!alert) {
+      this.logger.error("Alert data is required to send price alert");
+      throw new Error("Alert data is required");
+    }
+
+    if (currentPrice === undefined || currentPrice === null) {
+      this.logger.error("Current price is required to send price alert");
+      throw new Error("Current price is required");
+    }
+
+    // Check if user has email notifications enabled
+    try {
+      const isEnabled = await this.userService.isEmailNotificationEnabled(
+        alert.userId,
       );
-      return;
+
+      if (!isEnabled) {
+        this.logger.log(
+          `Email notification skipped for user ${alert.userId} - notifications disabled`,
+        );
+        return;
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to check email notification settings for user ${alert.userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw new Error(
+        `Failed to check email notification settings: ${errorMessage}`,
+      );
     }
 
     const condition = alert.condition === "above" ? "vượt lên" : "giảm xuống";
@@ -154,12 +181,22 @@ export class EmailService {
         `Price alert email sent to ${userEmail} for ${alert.coinId}`,
       );
     } catch (error: unknown) {
-      this.logger.error(`Failed to send email to ${userEmail}:`, error);
-      throw error;
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to send price alert email to ${userEmail} for ${alert.coinId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw new Error(`Failed to send price alert email: ${errorMessage}`);
     }
   }
 
   async sendTestEmail(to: string): Promise<void> {
+    if (!to) {
+      this.logger.error("Recipient email is required to send test email");
+      throw new Error("Recipient email is required");
+    }
+
     const mailOptions = {
       from: process.env.GMAIL_USER,
       to,
@@ -167,6 +204,17 @@ export class EmailService {
       text: "This is a test email from Crypto Tracker price alert system.",
     };
 
-    await this.transporter.sendMail(mailOptions);
+    try {
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Test email sent successfully to ${to}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to send test email to ${to}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw new Error(`Failed to send test email: ${errorMessage}`);
+    }
   }
 }

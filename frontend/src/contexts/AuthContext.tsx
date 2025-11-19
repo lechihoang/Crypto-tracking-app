@@ -11,10 +11,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Sync token to cookie for middleware
-    const token = authApi.getToken();
-    if (token) {
-      authApi.syncTokenToCookie(token);
+    // Clear any old localStorage tokens (migration to HttpOnly cookies)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('id_token');
     }
     checkAuthStatus();
   }, []);
@@ -22,20 +22,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuthStatus = async () => {
     try {
       setLoading(true);
-      if (authApi.isAuthenticated()) {
-        const result = await authApi.getProfile();
-        if (result.user && !result.error) {
-          setUser(result.user);
-        } else {
-          await authApi.signOut();
-          setUser(null);
-        }
+      const result = await authApi.getProfile();
+      if (result.user && !result.error) {
+        setUser(result.user);
       } else {
         setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      await authApi.signOut();
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Auth check failed:', error);
+      }
       setUser(null);
     } finally {
       setLoading(false);
@@ -46,37 +42,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await authApi.signIn({ email, password });
 
-      console.log('SignIn API result:', {
-        hasError: !!result.error,
-        hasAccessToken: !!result.access_token,
-        hasUser: !!result.user,
-        user: result.user,
-        error: result.error,
-      });
-
       if (result.error) {
-        console.error('SignIn failed with error:', result.error);
         return { success: false, error: result.error };
       }
 
-      if (result.access_token && result.user) {
-        console.log('SignIn successful, setting user');
+      if (result.user) {
         setUser(result.user);
         return { success: true };
       }
 
-      console.error('SignIn failed - missing token or user');
-      return { success: false, error: 'Đăng nhập thất bại - không nhận được token' };
+      return { success: false, error: 'Đăng nhập thất bại' };
     } catch (error) {
-      console.error('SignIn error in context:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('SignIn error:', error);
+      }
       return { success: false, error: 'Đã có lỗi xảy ra' };
     }
   };
 
   const signOut = async () => {
-    await authApi.signOut();
-    setUser(null);
-    window.location.href = '/';
+    try {
+      await authApi.signOut();
+      setUser(null);
+      // Use window.location for clean logout
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('SignOut error:', error);
+      }
+      // Still clear user and redirect on error
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    }
   };
 
   return (

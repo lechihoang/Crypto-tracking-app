@@ -1,24 +1,41 @@
-import { Controller, Get, Post, Query, Body } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  Body,
+  UseGuards,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from "@nestjs/common";
 import { RagService } from "./rag.service";
 import { VectorService, SearchResult, IndexStats } from "./vector.service";
 import { EmbeddingService } from "./embedding.service";
 import { ScraperService } from "./scraper.service";
 import { RagSchedulerService } from "./rag-scheduler.service";
+import { DevelopmentOnlyGuard } from "../common/guards";
 
 @Controller("rag")
 export class RagController {
+  private readonly logger = new Logger(RagController.name);
+
   constructor(
     private ragService: RagService,
     private vectorService: VectorService,
     private embeddingService: EmbeddingService,
     private scraperService: ScraperService,
-    private ragSchedulerService: RagSchedulerService,
   ) {}
 
   @Get("test/embedding")
+  @UseGuards(DevelopmentOnlyGuard)
   async testEmbedding(@Query("text") text: string) {
     try {
       const testText = text || "Bitcoin is a decentralized cryptocurrency";
+      this.logger.debug(
+        `Testing embedding service with text: "${testText.substring(0, 50)}..."`,
+      );
+
       const embedding = await this.embeddingService.createEmbedding(testText);
 
       return {
@@ -29,15 +46,28 @@ export class RagController {
         message: "Embedding service is working correctly",
       };
     } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        message: "Embedding service failed",
-      };
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error(
+        `Embedding service test failed: ${errorMessage}`,
+        errorStack,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          message: "Embedding service failed",
+          error: errorMessage,
+        },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
   }
 
   @Get("test/pinecone")
+  @UseGuards(DevelopmentOnlyGuard)
   async testPinecone(): Promise<{
     success: boolean;
     stats?: IndexStats | null;
@@ -45,6 +75,8 @@ export class RagController {
     error?: string;
   }> {
     try {
+      this.logger.debug("Testing Pinecone connection...");
+
       const stats: IndexStats | null = await this.vectorService.getIndexStats();
 
       return {
@@ -53,17 +85,32 @@ export class RagController {
         message: "Pinecone connection is working",
       };
     } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        message: "Pinecone connection failed",
-      };
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error(
+        `Pinecone connection test failed: ${errorMessage}`,
+        errorStack,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          message: "Pinecone connection failed",
+          error: errorMessage,
+        },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
   }
 
   @Get("test/coingecko")
+  @UseGuards(DevelopmentOnlyGuard)
   async testCoinGecko() {
     try {
+      this.logger.debug("Testing CoinGecko API connection...");
+
       const content = await this.scraperService.getAllCoinGeckoData();
 
       return {
@@ -78,39 +125,64 @@ export class RagController {
         message: "CoinGecko API is working correctly",
       };
     } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        message: "CoinGecko API failed",
-      };
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error(
+        `CoinGecko API test failed: ${errorMessage}`,
+        errorStack,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          message: "CoinGecko API failed",
+          error: errorMessage,
+        },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
   }
 
   @Post("seed")
   async seedData() {
     try {
-      console.log("Starting data seeding with CoinGecko API...");
+      this.logger.log("Starting data seeding with CoinGecko API...");
 
       // Step 1: Initialize index
       await this.vectorService.initializeIndex();
 
       // Step 2: Fetch from CoinGecko API
-      console.log(`Fetching CoinGecko data...`);
+      this.logger.log(`Fetching CoinGecko data...`);
       const content = await this.scraperService.getAllCoinGeckoData();
 
       if (content.length === 0) {
-        return {
-          success: false,
-          message: "No content was fetched from CoinGecko",
-        };
+        this.logger.warn(
+          "No content fetched from CoinGecko API during seeding",
+        );
+
+        throw new HttpException(
+          {
+            success: false,
+            message:
+              "No content was fetched from CoinGecko API. The service may be unavailable.",
+            error: "No data available",
+          },
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
       }
 
       // Step 3: Add to Pinecone
-      console.log(`Adding ${content.length} items to Pinecone...`);
+      this.logger.log(`Adding ${content.length} items to Pinecone...`);
       await this.ragService.addMultipleDocuments(content);
 
       // Step 4: Get stats
       const stats = await this.vectorService.getIndexStats();
+
+      this.logger.log(
+        `Successfully seeded ${content.length} items to knowledge base`,
+      );
 
       return {
         success: true,
@@ -124,12 +196,30 @@ export class RagController {
         message: `Successfully seeded ${content.length} items to Pinecone`,
       };
     } catch (error: unknown) {
-      console.error("Seed error:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        message: "Seeding failed",
-      };
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      // If it's already an HttpException, log and rethrow it
+      if (error instanceof HttpException) {
+        this.logger.error(`Seed operation failed: ${errorMessage}`, errorStack);
+        throw error;
+      }
+
+      // For unexpected errors, log and return 500
+      this.logger.error(
+        `Unexpected error during seed operation: ${errorMessage}`,
+        errorStack,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          message: "Failed to seed knowledge base with data",
+          error: errorMessage,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -138,99 +228,256 @@ export class RagController {
     @Body() body: { query: string; limit?: number; threshold?: number },
   ): Promise<{ success: boolean; results: SearchResult[]; count: number }> {
     try {
+      // Validate query parameter
+      if (!body.query || body.query.trim().length === 0) {
+        this.logger.warn("Search request received with empty query");
+
+        throw new HttpException(
+          {
+            success: false,
+            message: "Query parameter is required and cannot be empty",
+            error: "Validation failed",
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Validate limit parameter
+      if (body.limit !== undefined && (body.limit < 1 || body.limit > 50)) {
+        this.logger.warn(
+          `Search request received with invalid limit: ${body.limit}`,
+        );
+
+        throw new HttpException(
+          {
+            success: false,
+            message: "Limit must be between 1 and 50",
+            error: "Validation failed",
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Validate threshold parameter
+      if (
+        body.threshold !== undefined &&
+        (body.threshold < 0 || body.threshold > 1)
+      ) {
+        this.logger.warn(
+          `Search request received with invalid threshold: ${body.threshold}`,
+        );
+
+        throw new HttpException(
+          {
+            success: false,
+            message: "Threshold must be between 0 and 1",
+            error: "Validation failed",
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const limit = body.limit || 5;
+      const threshold = body.threshold || 0.3;
+
+      this.logger.debug(
+        `Searching knowledge base with query: "${body.query.substring(0, 50)}...", limit: ${limit}, threshold: ${threshold}`,
+      );
+
       const results = await this.ragService.searchSimilarDocuments(
         body.query,
-        body.limit || 5,
-        body.threshold || 0.3,
+        limit,
+        threshold,
       );
+
+      this.logger.debug(`Search completed, found ${results.length} results`);
 
       return {
         success: true,
         results,
         count: results.length,
       };
-    } catch {
-      return {
-        success: false,
-        results: [],
-        count: 0,
-      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      // If it's already an HttpException, log and rethrow it
+      if (error instanceof HttpException) {
+        this.logger.error(
+          `Search operation failed: ${errorMessage}`,
+          errorStack,
+        );
+        throw error;
+      }
+
+      // For unexpected errors, log and return 500
+      this.logger.error(
+        `Unexpected error during search operation: ${errorMessage}`,
+        errorStack,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          message: "Failed to search knowledge base",
+          error: errorMessage,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @Get("stats")
   async getStats() {
     try {
+      this.logger.debug("Retrieving vector database statistics...");
+
       const stats = await this.vectorService.getIndexStats();
+
+      if (!stats) {
+        this.logger.warn(
+          "Unable to retrieve index statistics - stats returned null",
+        );
+
+        throw new HttpException(
+          {
+            success: false,
+            message:
+              "Unable to retrieve index statistics. The vector database may be unavailable.",
+            error: "Stats unavailable",
+          },
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
 
       return {
         success: true,
         stats,
       };
     } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      // If it's already an HttpException, log and rethrow it
+      if (error instanceof HttpException) {
+        this.logger.error(
+          `Failed to retrieve stats: ${errorMessage}`,
+          errorStack,
+        );
+        throw error;
+      }
+
+      // For unexpected errors, log and return 503
+      this.logger.error(
+        `Unexpected error retrieving stats: ${errorMessage}`,
+        errorStack,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          message: "Failed to retrieve vector database statistics",
+          error: errorMessage,
+        },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
   }
 
   @Post("refresh")
   async refreshData() {
     try {
+      this.logger.log("Starting crypto data refresh...");
+
       await this.ragService.refreshCryptoData();
 
       const stats = await this.vectorService.getIndexStats();
 
+      this.logger.log("Crypto data refresh completed successfully");
+
       return {
         success: true,
-        message: "Data refreshed successfully",
+        message: "Crypto data refreshed successfully",
         stats,
       };
     } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        message: "Refresh failed",
-      };
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      // If it's already an HttpException, log and rethrow it
+      if (error instanceof HttpException) {
+        this.logger.error(
+          `Crypto data refresh failed: ${errorMessage}`,
+          errorStack,
+        );
+        throw error;
+      }
+
+      // For unexpected errors, log and return 500
+      this.logger.error(
+        `Unexpected error during crypto data refresh: ${errorMessage}`,
+        errorStack,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          message: "Failed to refresh crypto data from external sources",
+          error: errorMessage,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @Post("clear")
   async clearAllData() {
     try {
+      this.logger.log("Clearing all vectors from knowledge base...");
+
       await this.vectorService.deleteAllVectors();
 
       const stats = await this.vectorService.getIndexStats();
 
+      this.logger.log("All vectors cleared successfully");
+
       return {
         success: true,
-        message: "All data cleared successfully",
+        message: "All vectors cleared from knowledge base successfully",
         stats,
       };
     } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        message: "Failed to clear data",
-      };
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      // If it's already an HttpException, log and rethrow it
+      if (error instanceof HttpException) {
+        this.logger.error(
+          `Failed to clear vectors: ${errorMessage}`,
+          errorStack,
+        );
+        throw error;
+      }
+
+      // For unexpected errors, log and return 500
+      this.logger.error(
+        `Unexpected error clearing vectors: ${errorMessage}`,
+        errorStack,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          message: "Failed to clear data from vector database",
+          error: errorMessage,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  /**
-   * Trigger manual refresh via scheduler
-   * This uses the scheduler service which has anti-concurrent protection
-   */
-  @Post("refresh/manual")
-  async triggerManualRefresh() {
-    return await this.ragSchedulerService.triggerManualRefresh();
-  }
-
-  /**
-   * Get current refresh status
-   */
-  @Get("refresh/status")
-  getRefreshStatus() {
-    return this.ragSchedulerService.getRefreshStatus();
-  }
 }

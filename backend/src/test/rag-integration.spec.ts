@@ -282,6 +282,261 @@ describe("RAG System Integration Tests", () => {
       }
     }, 120000);
   });
+
+  describe("Error Scenarios", () => {
+    describe("Pinecone Connection Failures", () => {
+      it("should handle Pinecone connection errors gracefully in searchSimilarDocuments", async () => {
+        // Mock vectorService to simulate connection failure
+        const originalSearchSimilar = vectorService.searchSimilar;
+        jest
+          .spyOn(vectorService, "searchSimilar")
+          .mockRejectedValueOnce(new Error("Pinecone connection failed"));
+
+        await expect(
+          ragService.searchSimilarDocuments("test query", 5, 0.5),
+        ).rejects.toThrow();
+
+        // Restore original method
+        vectorService.searchSimilar = originalSearchSimilar;
+      }, 30000);
+
+      it("should handle Pinecone upsert errors in addDocument", async () => {
+        const originalUpsert = vectorService.upsertDocuments;
+        jest
+          .spyOn(vectorService, "upsertDocuments")
+          .mockRejectedValueOnce(new Error("Pinecone upsert failed"));
+
+        const testContent = {
+          title: "Test Document",
+          content: "Test content for error handling",
+          url: "https://test.com/error",
+          source: "Test",
+          publishedAt: new Date(),
+        };
+
+        await expect(ragService.addDocument(testContent)).rejects.toThrow();
+
+        // Restore original method
+        vectorService.upsertDocuments = originalUpsert;
+      }, 30000);
+
+      it("should verify proper error response format for Pinecone failures", async () => {
+        const originalSearchSimilar = vectorService.searchSimilar;
+        jest
+          .spyOn(vectorService, "searchSimilar")
+          .mockRejectedValueOnce(new Error("Network timeout"));
+
+        try {
+          await ragService.searchSimilarDocuments("test query", 5, 0.5);
+          fail("Should have thrown an error");
+        } catch (error: any) {
+          expect(error).toBeDefined();
+          expect(error.message).toBeDefined();
+          expect(error.getStatus).toBeDefined();
+          expect(error.getStatus()).toBe(503); // SERVICE_UNAVAILABLE
+        }
+
+        vectorService.searchSimilar = originalSearchSimilar;
+      }, 30000);
+    });
+
+    describe("Embedding Service Failures", () => {
+      it("should handle embedding API failures in searchSimilarDocuments", async () => {
+        const originalCreateEmbedding = embeddingService.createEmbedding;
+        jest
+          .spyOn(embeddingService, "createEmbedding")
+          .mockRejectedValueOnce(new Error("HuggingFace API error"));
+
+        await expect(
+          ragService.searchSimilarDocuments("test query", 5, 0.5),
+        ).rejects.toThrow();
+
+        embeddingService.createEmbedding = originalCreateEmbedding;
+      }, 30000);
+
+      it("should handle embedding failures in addDocument", async () => {
+        const originalCreateEmbedding = embeddingService.createEmbedding;
+        jest
+          .spyOn(embeddingService, "createEmbedding")
+          .mockRejectedValueOnce(new Error("Embedding generation failed"));
+
+        const testContent = {
+          title: "Test Document",
+          content: "Test content for embedding error",
+          url: "https://test.com/embed-error",
+          source: "Test",
+          publishedAt: new Date(),
+        };
+
+        await expect(ragService.addDocument(testContent)).rejects.toThrow();
+
+        embeddingService.createEmbedding = originalCreateEmbedding;
+      }, 30000);
+
+      it("should handle rate limit errors from embedding service", async () => {
+        const originalCreateEmbedding = embeddingService.createEmbedding;
+        const rateLimitError: any = new Error("Rate limit exceeded");
+        rateLimitError.getStatus = () => 429;
+
+        jest
+          .spyOn(embeddingService, "createEmbedding")
+          .mockRejectedValueOnce(rateLimitError);
+
+        const testContent = {
+          title: "Test Rate Limit",
+          content: "Test content for rate limit",
+          url: "https://test.com/rate-limit",
+          source: "Test",
+          publishedAt: new Date(),
+        };
+
+        await expect(ragService.addDocument(testContent)).rejects.toThrow();
+
+        embeddingService.createEmbedding = originalCreateEmbedding;
+      }, 30000);
+
+      it("should verify proper error messages for embedding failures", async () => {
+        const originalCreateEmbedding = embeddingService.createEmbedding;
+        jest
+          .spyOn(embeddingService, "createEmbedding")
+          .mockRejectedValueOnce(new Error("Invalid API key"));
+
+        try {
+          await ragService.searchSimilarDocuments("test query", 5, 0.5);
+          fail("Should have thrown an error");
+        } catch (error: any) {
+          expect(error).toBeDefined();
+          expect(error.message).toBeDefined();
+          expect(error.message).toContain("Failed to search knowledge base");
+        }
+
+        embeddingService.createEmbedding = originalCreateEmbedding;
+      }, 30000);
+    });
+
+    describe("CoinGecko API Failures", () => {
+      it("should handle CoinGecko API errors in refreshCryptoData", async () => {
+        const originalGetAllData = scraperService.getAllCoinGeckoData;
+        jest
+          .spyOn(scraperService, "getAllCoinGeckoData")
+          .mockRejectedValueOnce(new Error("CoinGecko API unavailable"));
+
+        await expect(ragService.refreshCryptoData()).rejects.toThrow();
+
+        scraperService.getAllCoinGeckoData = originalGetAllData;
+      }, 30000);
+
+      it("should handle empty response from CoinGecko API", async () => {
+        const originalGetAllData = scraperService.getAllCoinGeckoData;
+        jest
+          .spyOn(scraperService, "getAllCoinGeckoData")
+          .mockResolvedValueOnce([]);
+
+        await expect(ragService.refreshCryptoData()).rejects.toThrow();
+
+        scraperService.getAllCoinGeckoData = originalGetAllData;
+      }, 30000);
+
+      it("should retry on transient CoinGecko failures", async () => {
+        const originalGetAllData = scraperService.getAllCoinGeckoData;
+        let callCount = 0;
+
+        jest
+          .spyOn(scraperService, "getAllCoinGeckoData")
+          .mockImplementation(async () => {
+            callCount++;
+            if (callCount === 1) {
+              throw new Error("Network timeout");
+            }
+            return [
+              {
+                title: "Test Coin",
+                content: "Test content",
+                url: "https://test.com",
+                source: "CoinGecko API - Test",
+                publishedAt: new Date(),
+              },
+            ];
+          });
+
+        // Should succeed after retry
+        await expect(ragService.refreshCryptoData()).resolves.not.toThrow();
+        expect(callCount).toBeGreaterThan(1);
+
+        scraperService.getAllCoinGeckoData = originalGetAllData;
+      }, 60000);
+
+      it("should fail after max retries on persistent errors", async () => {
+        const originalGetAllData = scraperService.getAllCoinGeckoData;
+        jest
+          .spyOn(scraperService, "getAllCoinGeckoData")
+          .mockRejectedValue(new Error("Persistent API error"));
+
+        await expect(ragService.refreshCryptoData()).rejects.toThrow();
+
+        scraperService.getAllCoinGeckoData = originalGetAllData;
+      }, 60000);
+
+      it("should verify proper error response for CoinGecko failures", async () => {
+        const originalGetAllData = scraperService.getAllCoinGeckoData;
+        jest
+          .spyOn(scraperService, "getAllCoinGeckoData")
+          .mockRejectedValue(new Error("API rate limit exceeded"));
+
+        try {
+          await ragService.refreshCryptoData();
+          fail("Should have thrown an error");
+        } catch (error: any) {
+          expect(error).toBeDefined();
+          expect(error.message).toBeDefined();
+          expect(error.getStatus).toBeDefined();
+          expect(error.getStatus()).toBe(503); // SERVICE_UNAVAILABLE
+        } finally {
+          scraperService.getAllCoinGeckoData = originalGetAllData;
+        }
+      }, 60000);
+    });
+
+    describe("Combined Error Scenarios", () => {
+      it("should handle multiple service failures gracefully", async () => {
+        const originalCreateEmbedding = embeddingService.createEmbedding;
+        const originalSearchSimilar = vectorService.searchSimilar;
+
+        jest
+          .spyOn(embeddingService, "createEmbedding")
+          .mockRejectedValueOnce(new Error("Embedding service down"));
+
+        await expect(
+          ragService.searchSimilarDocuments("test", 5, 0.5),
+        ).rejects.toThrow();
+
+        embeddingService.createEmbedding = originalCreateEmbedding;
+        vectorService.searchSimilar = originalSearchSimilar;
+      }, 30000);
+
+      it("should log errors with proper context", async () => {
+        const originalCreateEmbedding = embeddingService.createEmbedding;
+        const loggerSpy = jest.spyOn(ragService["logger"], "error");
+
+        jest
+          .spyOn(embeddingService, "createEmbedding")
+          .mockRejectedValueOnce(new Error("Test error for logging"));
+
+        try {
+          await ragService.searchSimilarDocuments("test query", 5, 0.5);
+        } catch (error) {
+          // Expected to throw
+        }
+
+        expect(loggerSpy).toHaveBeenCalled();
+        expect(loggerSpy.mock.calls[0][0]).toContain(
+          "Failed to search similar documents",
+        );
+
+        embeddingService.createEmbedding = originalCreateEmbedding;
+      }, 30000);
+    });
+  });
 });
 
 // Helper function

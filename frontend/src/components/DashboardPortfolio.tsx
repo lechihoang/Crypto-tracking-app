@@ -24,23 +24,23 @@ const DashboardPortfolio = React.memo(function DashboardPortfolio({
 }: DashboardPortfolioProps) {
   if (coinsCount === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-gray-800 border border-gray-600/50 rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Danh mục đầu tư</h3>
-          <Link href="/portfolio" className="text-blue-600 hover:text-blue-700 text-sm font-semibold transition-colors">
+          <h3 className="text-lg font-semibold text-white">Danh mục đầu tư</h3>
+          <Link href="/portfolio" className="text-primary-500 hover:text-primary-600 text-sm font-semibold transition-colors">
             Xem chi tiết
           </Link>
         </div>
 
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <Wallet className="w-8 h-8 text-gray-400" />
           </div>
-          <h4 className="text-lg font-semibold text-gray-900 mb-2">Chưa có coin nào</h4>
-          <p className="text-gray-600 mb-6">Thêm coin để bắt đầu theo dõi danh mục của bạn</p>
+          <h4 className="text-lg font-semibold text-white mb-2">Chưa có coin nào</h4>
+          <p className="text-gray-300 mb-6">Thêm coin để bắt đầu theo dõi danh mục của bạn</p>
           <Link
             href="/portfolio"
-            className="inline-flex items-center gap-2 px-6 py-3 text-white rounded-lg transition-colors bg-blue-600 hover:bg-blue-700"
+            className="inline-flex items-center gap-2 px-6 py-3 text-white rounded-lg transition-colors bg-primary-500 hover:bg-primary-600"
           >
             <Plus className="w-5 h-5" />
             <span className="font-semibold">Quản lý danh mục</span>
@@ -51,10 +51,10 @@ const DashboardPortfolio = React.memo(function DashboardPortfolio({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="bg-gray-800 border border-gray-600/50 rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Danh mục đầu tư</h3>
-        <Link href="/portfolio" className="text-blue-600 hover:text-blue-700 text-sm font-semibold transition-colors">
+        <h3 className="text-lg font-semibold text-white">Danh mục đầu tư</h3>
+        <Link href="/portfolio" className="text-primary-500 hover:text-primary-600 text-sm font-semibold transition-colors">
           Xem chi tiết
         </Link>
       </div>
@@ -69,8 +69,8 @@ const DashboardPortfolio = React.memo(function DashboardPortfolio({
 
             return (
               <div
-                key={`${holding.holding.id}-${holding.holding.coinId}-${index}`}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                key={`${holding.holding._id}-${holding.holding.coinId}-${index}`}
+                className="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors border border-gray-600/30"
               >
                 <div className="flex items-center gap-3">
                   {coinImage ? (
@@ -95,8 +95,8 @@ const DashboardPortfolio = React.memo(function DashboardPortfolio({
                     </div>
                   )}
                   <div>
-                    <h4 className="font-medium text-gray-900">{coinName}</h4>
-                    <p className="text-xs text-gray-600">
+                    <h4 className="font-medium text-white">{coinName}</h4>
+                    <p className="text-xs text-gray-300">
                       {Number(quantity).toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 8
@@ -105,26 +105,19 @@ const DashboardPortfolio = React.memo(function DashboardPortfolio({
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-gray-900">{formatCurrency(holding.currentValue)}</p>
-                  <p className="text-xs text-gray-600">{percentage}%</p>
+                  <p className="font-semibold text-white">{formatCurrency(holding.currentValue)}</p>
+                  <p className="text-xs text-gray-300">{percentage}%</p>
                 </div>
               </div>
             );
           })}
       </div>
 
-      {coinsCount > 3 && (
-        <p className="text-sm text-gray-500 text-center mb-4">
-          +{coinsCount - 3} coin khác
+      {coinsCount > 5 && (
+        <p className="text-sm text-gray-400 text-center">
+          +{coinsCount - 5} coin khác
         </p>
       )}
-
-      <Link
-        href="/portfolio"
-        className="block w-full text-center py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-      >
-        Xem tất cả
-      </Link>
     </div>
   );
 });

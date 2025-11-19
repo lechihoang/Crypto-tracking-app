@@ -6,7 +6,7 @@
 // Note: coinSymbol, coinName, coinImage are NOT stored in database
 // They are populated from CoinGecko API when fetched from backend
 export interface PortfolioHolding {
-  id: string;
+  _id: string; // MongoDB document ID
   userId: string;
   coinId: string; // CoinGecko ID (e.g., "bitcoin")
   coinSymbol: string; // Populated from API (e.g., "BTC")

@@ -10,8 +10,10 @@ import {
  * Custom validator for strong password requirements
  */
 @ValidatorConstraint({ name: "isStrongPassword", async: false })
-export class IsStrongPasswordConstraint implements ValidatorConstraintInterface {
-  validate(password: string, args: ValidationArguments) {
+export class IsStrongPasswordConstraint
+  implements ValidatorConstraintInterface
+{
+  validate(password: string) {
     if (!password || typeof password !== "string") {
       return false;
     }

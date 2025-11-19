@@ -113,14 +113,14 @@ export default function AddHoldingModal({ isOpen, onClose, onSuccess }: AddHoldi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto border border-gray-600/50 shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Thêm Holding</h3>
+        <div className="flex items-center justify-between p-6 border-b border-gray-600/50">
+          <h3 className="text-lg font-semibold text-gray-100">Thêm Holding</h3>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-200 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -129,14 +129,14 @@ export default function AddHoldingModal({ isOpen, onClose, onSuccess }: AddHoldi
         {/* Content */}
         <div className="p-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+            <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-lg mb-6 text-sm">
               {error}
             </div>
           )}
 
           {/* Coin Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Chọn Coin
             </label>
             <CoinSelector
@@ -147,7 +147,7 @@ export default function AddHoldingModal({ isOpen, onClose, onSuccess }: AddHoldi
               onCoinRemove={removeCoin}
             />
             {!selectedCoin && formValues.coinId === '' && (
-              <p className="mt-1 text-sm text-red-600">Vui lòng chọn coin</p>
+              <p className="mt-1 text-sm text-red-400">Vui lòng chọn coin</p>
             )}
           </div>
 

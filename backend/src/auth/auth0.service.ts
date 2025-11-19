@@ -33,7 +33,6 @@ export class Auth0Service {
   private domain: string;
   private clientId: string;
   private clientSecret: string;
-  private audience: string;
   private userCache: NodeCache;
 
   constructor(private configService: ConfigService) {
@@ -41,9 +40,6 @@ export class Auth0Service {
     this.clientId = this.configService.get<string>("AUTH0_CLIENT_ID") || "";
     this.clientSecret =
       this.configService.get<string>("AUTH0_CLIENT_SECRET") || "";
-    this.audience =
-      this.configService.get<string>("AUTH0_AUDIENCE") ||
-      `https://${this.domain}/api/v2/`;
 
     // Management API client for user operations
     this.management = new ManagementClient({
@@ -79,7 +75,7 @@ export class Auth0Service {
       console.log("Attempting sign in:", {
         email,
         passwordLength: password?.length,
-        realm: "Username-Password-Authentication"
+        realm: "Username-Password-Authentication",
       });
 
       const response = await this.authentication.oauth.passwordGrant({
@@ -96,7 +92,8 @@ export class Auth0Service {
         hasIdToken: !!response.data.id_token,
         tokenType: response.data.token_type,
         expiresIn: response.data.expires_in,
-        accessTokenPreview: response.data.access_token?.substring(0, 50) + '...',
+        accessTokenPreview:
+          response.data.access_token?.substring(0, 50) + "...",
       });
 
       return response.data as Auth0TokenResponse;
@@ -113,8 +110,8 @@ export class Auth0Service {
 
       throw new UnauthorizedException(
         error.response?.data?.error_description ||
-        error.message ||
-        "Invalid email or password",
+          error.message ||
+          "Invalid email or password",
       );
     }
   }
@@ -124,7 +121,10 @@ export class Auth0Service {
    */
   async signUp(email: string, password: string, fullName?: string) {
     try {
-      console.log("Signing up user:", { email, passwordLength: password?.length });
+      console.log("Signing up user:", {
+        email,
+        passwordLength: password?.length,
+      });
 
       const userName = fullName || email.split("@")[0];
 
@@ -143,7 +143,8 @@ export class Auth0Service {
 
       // If we have user_id, update the user profile to ensure name is set
       if ((response.data as any)._id || (response.data as any).user_id) {
-        const userId = (response.data as any)._id || (response.data as any).user_id;
+        const userId =
+          (response.data as any)._id || (response.data as any).user_id;
         try {
           await this.management.users.update(userId, {
             name: userName,
@@ -180,11 +181,15 @@ export class Auth0Service {
       // Check cache first
       const cachedUser = this.userCache.get<Auth0User>(cacheKey);
       if (cachedUser) {
-        console.log("✓ User info retrieved from cache (avoiding Auth0 API call)");
+        console.log(
+          "✓ User info retrieved from cache (avoiding Auth0 API call)",
+        );
         return cachedUser;
       }
 
-      console.log("Cache miss - getting user info from Auth0 userInfo endpoint...");
+      console.log(
+        "Cache miss - getting user info from Auth0 userInfo endpoint...",
+      );
 
       // Use Auth0's userInfo endpoint to get user details
       // This works with both opaque tokens (encrypted) and JWTs
@@ -205,14 +210,17 @@ export class Auth0Service {
 
       // If name is not set, try to get from Management API
       if (!userName) {
-        console.log("Name not found in userInfo, fetching from Management API...");
+        console.log(
+          "Name not found in userInfo, fetching from Management API...",
+        );
         try {
           const fullUser = await this.management.users.get(response.data.sub);
-          userName = fullUser.data.name ||
-                     fullUser.data.user_metadata?.full_name ||
-                     fullUser.data.user_metadata?.name ||
-                     fullUser.data.nickname ||
-                     fullUser.data.email?.split("@")[0];
+          userName =
+            fullUser.data.name ||
+            fullUser.data.user_metadata?.full_name ||
+            fullUser.data.user_metadata?.name ||
+            fullUser.data.nickname ||
+            fullUser.data.email?.split("@")[0];
 
           console.log("Got name from Management API:", userName);
 
@@ -230,7 +238,8 @@ export class Auth0Service {
         } catch (mgmtError) {
           console.warn("Failed to get user from Management API:", mgmtError);
           // Fallback to email username
-          userName = response.data.email?.split("@")[0] || response.data.nickname;
+          userName =
+            response.data.email?.split("@")[0] || response.data.nickname;
         }
       }
 
@@ -259,7 +268,7 @@ export class Auth0Service {
       // Provide better error messages for rate limiting
       if (error.response?.status === 429) {
         throw new UnauthorizedException(
-          "Too many requests to authentication service. Please try again in a few moments."
+          "Too many requests to authentication service. Please try again in a few moments.",
         );
       }
 
@@ -274,7 +283,7 @@ export class Auth0Service {
     try {
       const response = await this.management.users.get(userId);
       return response.data as Auth0User;
-    } catch (error: any) {
+    } catch {
       throw new UnauthorizedException("User not found");
     }
   }
@@ -337,7 +346,7 @@ export class Auth0Service {
       });
 
       return verified;
-    } catch (error: any) {
+    } catch {
       throw new UnauthorizedException("Invalid or expired token");
     }
   }
@@ -387,9 +396,7 @@ export class Auth0Service {
       await this.management.users.delete(userId);
       return { message: "User deleted successfully" };
     } catch (error: any) {
-      throw new UnauthorizedException(
-        error.message || "Failed to delete user",
-      );
+      throw new UnauthorizedException(error.message || "Failed to delete user");
     }
   }
 

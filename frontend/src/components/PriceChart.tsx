@@ -103,7 +103,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, currentPrice, coinId })
 
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow-lg">
+      <div className="bg-gray-800 p-6 rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50">
         <div className="h-80">
           <LoadingSpinner size="lg" />
         </div>
@@ -132,9 +132,9 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, currentPrice, coinId })
   }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
-          <p className="text-gray-600">{`Date: ${label}`}</p>
-          <p className="text-blue-600 font-semibold">
+        <div className="bg-[#23242a] p-3 border border-gray-600/50 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+          <p className="text-gray-100">{`Date: ${label}`}</p>
+          <p className="text-primary-500 font-semibold">
             {`Price: ${formatPrice(payload[0].value)}`}
           </p>
         </div>
@@ -144,7 +144,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, currentPrice, coinId })
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
+    <div className="bg-gray-800 p-6 rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all border border-gray-600/50">
       <div className="mb-6">
         <div className="flex flex-wrap gap-2 mb-4">
           {['1d', '7d', '30d', '90d', '1y'].map((period) => (
@@ -154,25 +154,25 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, currentPrice, coinId })
               disabled={loading}
               className={`px-3 py-1 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 timeframe === period
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-700 text-gray-100 hover:bg-gray-600 border border-gray-600/50'
               }`}
             >
               {period}
             </button>
           ))}
         </div>
-        
+
         <div className="flex items-center gap-4 mb-4">
-          <h3 className="text-lg font-semibold">{symbol} Biểu đồ giá</h3>
-          <div className={`flex items-center gap-1 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+          <h3 className="text-lg font-semibold text-white">{symbol} Biểu đồ giá</h3>
+          <div className={`flex items-center gap-1 ${isPositive ? 'text-success-500' : 'text-danger-500'}`}>
             <span className="font-medium">
               {isPositive ? '+' : ''}{priceChange.toFixed(2)}%
             </span>
-            <span className="text-sm text-gray-500">({timeframe})</span>
+            <span className="text-sm text-gray-100">({timeframe})</span>
           </div>
           {error && (
-            <div className="text-orange-600 text-sm">
+            <div className="text-warning-500 text-sm">
               {error} (hiển thị dữ liệu mô phỏng)
             </div>
           )}
@@ -182,26 +182,26 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, currentPrice, coinId })
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="time" 
-              stroke="#6b7280"
+            <CartesianGrid strokeDasharray="3 3" stroke="#2B2F36" opacity={0.3} />
+            <XAxis
+              dataKey="time"
+              stroke="#B0B3BB"
               fontSize={12}
             />
-            <YAxis 
+            <YAxis
               domain={[minPrice * 0.95, maxPrice * 1.05]}
               tickFormatter={formatPrice}
-              stroke="#6b7280"
+              stroke="#B0B3BB"
               fontSize={12}
             />
             <Tooltip content={<CustomTooltip />} />
             <Line
               type="monotone"
               dataKey="price"
-              stroke={isPositive ? '#10b981' : '#ef4444'}
+              stroke={isPositive ? '#16C784' : '#EA3943'}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4, stroke: isPositive ? '#10b981' : '#ef4444', strokeWidth: 2 }}
+              activeDot={{ r: 4, stroke: isPositive ? '#16C784' : '#EA3943', strokeWidth: 2 }}
             />
           </LineChart>
         </ResponsiveContainer>

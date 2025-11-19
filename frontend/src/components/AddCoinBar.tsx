@@ -97,13 +97,6 @@ export default function AddCoinBar({ onSuccess }: AddCoinBarProps) {
           throw new Error(result.error);
         }
 
-        // Create a snapshot after adding coin
-        try {
-          await portfolioApi.createSnapshot();
-        } catch (error) {
-          console.log('Failed to create snapshot:', error);
-        }
-
         return result;
       })();
 
@@ -141,10 +134,10 @@ export default function AddCoinBar({ onSuccess }: AddCoinBarProps) {
 
   if (!showForm) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-gray-800 border border-gray-600/50 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all p-4 mb-6">
         <button
           onClick={() => setShowForm(true)}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-600/50 rounded-lg text-gray-300 hover:border-primary-500/50 hover:text-primary-400 transition-colors"
         >
           <Plus className="w-5 h-5" />
           Thêm coin vào danh mục đầu tư
@@ -154,19 +147,19 @@ export default function AddCoinBar({ onSuccess }: AddCoinBarProps) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div className="bg-gray-800 border border-gray-600/50 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Thêm coin mới</h3>
+        <h3 className="text-lg font-semibold text-white">Thêm coin mới</h3>
         <button
           onClick={handleCancel}
-          className="text-gray-400 hover:text-gray-600"
+          className="text-gray-400 hover:text-gray-300"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+        <div className="bg-danger-500/20 border border-danger-500/40 text-danger-400 px-4 py-3 rounded-lg mb-4 text-sm">
           {error}
         </div>
       )}
@@ -175,7 +168,7 @@ export default function AddCoinBar({ onSuccess }: AddCoinBarProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Coin Selection */}
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Chọn coin
             </label>
             <div className="relative">
@@ -191,15 +184,15 @@ export default function AddCoinBar({ onSuccess }: AddCoinBarProps) {
                 }}
                 onFocus={() => setShowDropdown(true)}
                 placeholder="Tìm kiếm coin..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
+                className="w-full px-3 py-2 border border-gray-700/40 bg-dark-600 text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent pr-8 placeholder-gray-400"
               />
               <Search className="absolute right-2 top-2.5 w-4 h-4 text-gray-400" />
 
               {showDropdown && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 mt-1 w-full bg-dark-700 border border-gray-700/40 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {coinsLoading ? (
                     <div className="p-3 text-center">
-                      <Loader className="w-4 h-4 animate-spin mx-auto" />
+                      <Loader className="w-4 h-4 animate-spin mx-auto text-gray-400" />
                     </div>
                   ) : filteredCoins.length > 0 ? (
                     filteredCoins.map((coin) => (
@@ -207,16 +200,16 @@ export default function AddCoinBar({ onSuccess }: AddCoinBarProps) {
                         key={coin.id}
                         type="button"
                         onClick={() => handleCoinSelect(coin)}
-                        className="w-full px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        className="w-full px-3 py-2 text-left hover:bg-dark-600 border-b border-gray-700/30 last:border-b-0"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">{coin.name}</span>
-                          <span className="text-sm text-gray-500">{coin.symbol.toUpperCase()}</span>
+                          <span className="font-medium text-white">{coin.name}</span>
+                          <span className="text-sm text-gray-400">{coin.symbol.toUpperCase()}</span>
                         </div>
                       </button>
                     ))
                   ) : (
-                    <div className="p-3 text-center text-gray-500 text-sm">
+                    <div className="p-3 text-center text-gray-400 text-sm">
                       Không tìm thấy coin nào
                     </div>
                   )}
@@ -227,7 +220,7 @@ export default function AddCoinBar({ onSuccess }: AddCoinBarProps) {
 
           {/* Quantity */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Số lượng
             </label>
             <input
@@ -237,7 +230,7 @@ export default function AddCoinBar({ onSuccess }: AddCoinBarProps) {
               step="any"
               min="0.00000001"
               placeholder="0.00000000"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-700/40 bg-dark-600 text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400"
               required
             />
           </div>
@@ -247,7 +240,7 @@ export default function AddCoinBar({ onSuccess }: AddCoinBarProps) {
             <button
               type="submit"
               disabled={loading || !selectedCoin || !quantity}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-w-0"
+              className="w-full px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-w-0"
             >
               {loading ? (
                 <>

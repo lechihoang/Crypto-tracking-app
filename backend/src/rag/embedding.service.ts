@@ -5,7 +5,8 @@ import axios from "axios";
 @Injectable()
 export class EmbeddingService {
   private readonly huggingFaceApiKey: string;
-  private readonly huggingFaceBaseUrl = "https://router.huggingface.co/hf-inference";
+  private readonly huggingFaceBaseUrl =
+    "https://router.huggingface.co/hf-inference";
   private readonly modelName = "BAAI/bge-small-en-v1.5";
   private readonly embeddingDimension = 384; // bge-small-en-v1.5 dimensions
 

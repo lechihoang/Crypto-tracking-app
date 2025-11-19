@@ -29,7 +29,6 @@ export default function DashboardPage() {
     benchmark: { value: number; setAt: string } | null;
   } | null>(null);
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
-  const [, setStatsLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -46,7 +45,6 @@ export default function DashboardPage() {
   }, [user]);
 
   const fetchDashboardData = async () => {
-    setStatsLoading(true);
     try {
       const [portfolioResult, benchmarkResult, alertsResult] = await Promise.all([
         portfolioApi.getPortfolioValue(),
@@ -66,7 +64,9 @@ export default function DashboardPage() {
           );
         }
       } catch (error) {
-        console.log('Failed to fetch coin images:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Failed to fetch coin images:', error);
+        }
       }
 
       // Process portfolio data
@@ -111,9 +111,9 @@ export default function DashboardPage() {
         setAlerts(alertsWithImages);
       }
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
-    } finally {
-      setStatsLoading(false);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to fetch dashboard data:', error);
+      }
     }
   };
 
@@ -177,14 +177,14 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-dark-900 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Chào mừng, {user?.name || user?.email?.split('@')[0]}!
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Tổng quan
           </h1>
-          <p className="text-gray-600">Quản lý danh mục đầu tư crypto của bạn</p>
+          <p className="text-gray-100">Quản lý danh mục đầu tư crypto của bạn</p>
         </div>
 
         <DashboardStats stats={dashboardStats} />

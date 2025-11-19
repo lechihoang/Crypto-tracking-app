@@ -8,38 +8,38 @@ import { FaBitcoin, FaEthereum } from 'react-icons/fa';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-dark-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-12 gap-6">
           {/* Section 1: 12 cột trên mobile/tablet, 5 cột trên desktop */}
-          <section className="col-span-12 xl:col-span-5 bg-white rounded-lg shadow flex flex-col justify-between p-8">
+          <section className="col-span-12 xl:col-span-5 bg-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50 flex flex-col justify-between p-8 hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300">
             <div>
-              <h1 className="text-5xl xl:text-6xl text-gray-700 font-bold mb-20">
-                Theo dõi crypto của bạn dễ dàng với <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Crypto Tracker</span>
+              <h1 className="text-5xl xl:text-6xl text-white font-bold mb-20">
+                Theo dõi crypto của bạn dễ dàng với <span className="text-primary-500">Crypto Tracker</span>
               </h1>
-              <p className="text-lg xl:text-xl text-gray-700 mb-8">
+              <p className="text-lg xl:text-xl text-gray-300 mb-8 leading-relaxed">
                 Nắm bắt mọi thông tin, xu hướng về đồng tiền ảo. Theo dõi biến động giá, phân tích lãi/lỗ và xu hướng tài sản crypto của bạn - chỉ với một trang web duy nhất.
               </p>
             </div>
-            <Link href="/dashboard" className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center justify-center">
+            <Link href="/dashboard" className="bg-primary-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-all duration-300 inline-flex items-center justify-center">
               Đăng nhập ngay
             </Link>
           </section>
 
           {/* Section 2: 12 cột trên mobile/tablet, 7 cột trên desktop */}
-          <section className="col-span-12 xl:col-span-7 bg-white rounded-lg shadow overflow-hidden">
+          <section className="col-span-12 xl:col-span-7 bg-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50 overflow-hidden hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300">
             <Image
               src="/images/dashboard-preview.png"
               alt="Dashboard Preview"
               width={1200}
               height={800}
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-contain opacity-90"
             />
           </section>
         </div>
 
         {/* Section 3: Floating coins section */}
-        <div className="relative mt-16 py-20 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl">
+        <div className="relative mt-16 py-20 overflow-hidden bg-gray-800 rounded-3xl border border-gray-600/50 shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300">
           {/* Floating coins with real icons - Nhiều đồng coin hơn */}
           <div className="absolute top-10 left-10 animate-bounce">
             <SiBitcoin className="text-6xl text-orange-500" />
@@ -88,10 +88,10 @@ export default function Home() {
 
           {/* Content */}
           <div className="relative z-10 text-center max-w-3xl mx-auto px-6">
-            <h2 className="text-5xl font-bold text-gray-800 mb-6">
-              Hỗ trợ <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">hơn 10,000+</span> loại cryptocurrency
+            <h2 className="text-5xl font-bold text-white mb-6">
+              Hỗ trợ <span className="text-primary-500">hơn 10,000+</span> loại cryptocurrency
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-300 leading-relaxed">
               Từ Bitcoin, Ethereum đến các altcoin mới nhất. Theo dõi toàn bộ danh mục đầu tư của bạn ở một nơi.
             </p>
           </div>
@@ -100,63 +100,63 @@ export default function Home() {
         {/* Section 4: Portfolio - 6/6 */}
 
         {/* Section 5: So sánh giá real-time - 6/6 */}
-        <div className="grid grid-cols-12 gap-4 mt-16">
+        <div className="grid grid-cols-12 gap-6 mt-16">
           {/* Compare Price Content: 6 cột trên desktop */}
-          <section className="col-span-12 xl:col-span-6 bg-white p-8 rounded-lg shadow flex flex-col justify-between">
+          <section className="col-span-12 xl:col-span-6 bg-gray-800 p-8 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50 flex flex-col justify-between hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300">
             <div className="mb-8">
-              <h2 className="text-5xl font-bold text-gray-800 mb-8">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600">So sánh giá</span> real-time
+              <h2 className="text-5xl font-bold text-white mb-8">
+                <span className="text-success-500">So sánh giá</span> real-time
               </h2>
-              <p className="text-xl text-gray-700 mb-8">
+              <p className="text-xl text-gray-300 mb-8 leading-relaxed">
                 Theo dõi giá crypto theo thời gian thực với bảng so sánh chi tiết. Đặt cảnh báo giá thông minh để không bỏ lỡ cơ hội đầu tư.
               </p>
-              <ul className="space-y-3 text-lg text-gray-700 list-disc list-inside">
+              <ul className="space-y-3 text-lg text-gray-400 list-disc list-inside">
                 <li>Bảng so sánh giá 10,000+ đồng coin</li>
                 <li>Cập nhật giá theo thời gian thực</li>
                 <li>Đặt cảnh báo giá tùy chỉnh</li>
                 <li>Xem biểu đồ giá 24h, 7 ngày, 30 ngày</li>
               </ul>
             </div>
-            <Link href="/compare" className="bg-green-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-green-700 transition-colors inline-flex items-center justify-center">
+            <Link href="/compare" className="bg-success-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-success-600 transition-all duration-300 inline-flex items-center justify-center">
               Khám phá
             </Link>
           </section>
 
           {/* Compare Price Image/Preview: 6 cột trên desktop */}
-          <section className="col-span-12 xl:col-span-6 bg-white rounded-lg shadow overflow-hidden">
+          <section className="col-span-12 xl:col-span-6 bg-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50 overflow-hidden hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300">
             <Image
               src="/images/price-alert-preview.png"
               alt="Price Comparison Preview"
               width={800}
               height={600}
-              className="w-full h-full min-h-[400px] object-cover"
+              className="w-full h-full min-h-[400px] object-cover opacity-90"
             />
           </section>
         </div>
 
         {/* Section 6: Chatbot Crypto - 6/6 */}
-        <div className="grid grid-cols-12 gap-4 mt-16">
+        <div className="grid grid-cols-12 gap-6 mt-16">
           {/* Chatbot Image/Preview: 6 cột trên desktop */}
-          <section className="col-span-12 xl:col-span-6 bg-white rounded-lg shadow overflow-hidden">
+          <section className="col-span-12 xl:col-span-6 bg-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50 overflow-hidden hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300">
             <Image
               src="/images/chatbot-preview.jpg"
               alt="Chatbot Preview"
               width={800}
               height={600}
-              className="w-full h-full min-h-[400px] object-cover"
+              className="w-full h-full min-h-[400px] object-cover opacity-90"
             />
           </section>
 
           {/* Chatbot Content: 6 cột trên desktop */}
-          <section className="col-span-12 xl:col-span-6 bg-white p-8 rounded-lg shadow flex flex-col justify-between">
+          <section className="col-span-12 xl:col-span-6 bg-gray-800 p-8 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50 flex flex-col justify-between hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-300">
             <div className="mb-8">
-              <h2 className="text-5xl font-bold text-gray-800 mb-8">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">AI Chatbot</span> hỗ trợ crypto
+              <h2 className="text-5xl font-bold text-white mb-8">
+                <span className="text-primary-500">AI Chatbot</span> hỗ trợ crypto
               </h2>
-              <p className="text-xl text-gray-700 mb-8">
+              <p className="text-xl text-gray-300 mb-8 leading-relaxed">
                 Trợ lý AI thông minh giúp bạn phân tích thị trường, trả lời câu hỏi về cryptocurrency và đưa ra insights từ dữ liệu thời gian thực.
               </p>
-              <ul className="space-y-3 text-lg text-gray-700 list-disc list-inside">
+              <ul className="space-y-3 text-lg text-gray-400 list-disc list-inside">
                 <li>Phân tích thị trường bằng AI</li>
                 <li>Trả lời câu hỏi 24/7</li>
                 <li>Insights từ dữ liệu thực tế</li>
@@ -168,7 +168,7 @@ export default function Home() {
                 const chatButton = document.querySelector('[aria-label="Open crypto assistant chat"]') as HTMLButtonElement;
                 if (chatButton) chatButton.click();
               }}
-              className="bg-cyan-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-cyan-700 transition-colors inline-flex items-center justify-center"
+              className="bg-primary-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-all duration-300 inline-flex items-center justify-center"
             >
               Trò chuyện
             </button>

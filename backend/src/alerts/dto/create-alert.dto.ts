@@ -1,10 +1,4 @@
-import {
-  IsString,
-  IsNumber,
-  IsEnum,
-  MinLength,
-  Min,
-} from "class-validator";
+import { IsString, IsNumber, IsEnum, MinLength, Min } from "class-validator";
 
 export class CreateAlertDto {
   @IsString()

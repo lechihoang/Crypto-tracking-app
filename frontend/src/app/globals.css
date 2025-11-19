@@ -1,8 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* CoinMarketCap-inspired Dark Theme */
+  --background: #17171A;
+  --background-elevated: #1E2026;
+  --background-card: #1E2026;
+  --background-hover: #23242a;
+  --foreground: #F8F9FA;
+  --foreground-secondary: #B0B3BB;
+  --foreground-tertiary: #6B7280;
+
+  /* Accent colors */
+  --primary-blue: #3861FB;
+  --primary-cyan: #06b6d4;
+  --success-green: #16C784;
+  --danger-red: #EA3943;
+
+  /* Border colors */
+  --border-primary: rgba(43, 47, 54, 0.8);
+  --border-subtle: rgba(43, 47, 54, 0.3);
 }
 
 @theme inline {
@@ -11,18 +27,85 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Override gray colors for better visibility */
-  --color-gray-500: #4b5563;
-  --color-gray-600: #374151;
-  --color-gray-700: #1f2937;
-  --color-gray-800: #111827;
-  --color-gray-900: #030712;
+  /* Primary Blue colors - CoinMarketCap style */
+  --color-primary-50: #eff3ff;
+  --color-primary-100: #dbe4fe;
+  --color-primary-200: #bfcffe;
+  --color-primary-300: #93b0fd;
+  --color-primary-400: #6087fa;
+  --color-primary-500: #3861FB;
+  --color-primary-600: #2651eb;
+  --color-primary-700: #1e3fd8;
+  --color-primary-800: #1d35af;
+  --color-primary-900: #1d308a;
+
+  /* Success/Green colors for price increases - CoinMarketCap style */
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #16C784;
+  --color-success-600: #12b574;
+  --color-success-700: #0f9960;
+  --color-success-800: #0d7d4f;
+  --color-success-900: #0b6640;
+
+  /* Danger/Red colors for price decreases - CoinMarketCap style */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #EA3943;
+  --color-danger-600: #d32f38;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+
+  /* Warning/Amber colors */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  /* Dark theme gray scale - CoinMarketCap style */
+  --color-gray-50: #F8F9FA;
+  --color-gray-100: #B0B3BB;
+  --color-gray-200: #9295A3;
+  --color-gray-300: #6B7280;
+  --color-gray-400: #4b5563;
+  --color-gray-500: #374151;
+  --color-gray-600: #2B2F36;
+  --color-gray-700: #23242a;
+  --color-gray-800: #1E2026;
+  --color-gray-900: #17171A;
+  --color-gray-950: #0f0f11;
+
+  /* Dark background variations - CoinMarketCap style */
+  --color-dark-50: #cbd5e1;
+  --color-dark-100: #94a3b8;
+  --color-dark-200: #64748b;
+  --color-dark-300: #475569;
+  --color-dark-400: #334155;
+  --color-dark-500: #2B2F36;
+  --color-dark-600: #23242a;
+  --color-dark-700: #1E2026;
+  --color-dark-800: #1a1b20;
+  --color-dark-900: #17171A;
 }
 
 body {
-  background: #f9fafb; /* gray-50 */
+  background: #0d1421;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  min-height: 100vh;
 }
 
 /* Custom tooltip - hiện ngay khi hover */
@@ -33,16 +116,18 @@ body {
   left: 50%;
   transform: translateX(-50%);
   padding: 8px 12px;
-  background-color: #1f2937;
-  color: white;
+  background-color: var(--background-elevated);
+  color: var(--foreground);
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   border-radius: 6px;
+  border: 1px solid var(--border-subtle);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
   z-index: 99999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 [data-tooltip]::after {
@@ -52,7 +137,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: #1f2937;
+  border-top-color: var(--background-elevated);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
@@ -62,4 +147,125 @@ body {
 [data-tooltip]:hover::before,
 [data-tooltip]:hover::after {
   opacity: 1;
+}
+
+/* Utility classes for CoinMarketCap theme */
+.bg-cmc-dark {
+  background-color: var(--background);
+}
+
+.bg-cmc-elevated {
+  background-color: var(--background-elevated);
+}
+
+.bg-cmc-card {
+  background-color: var(--background-card);
+}
+
+.bg-cmc-hover {
+  background-color: var(--background-hover);
+}
+
+.text-cmc-primary {
+  color: var(--foreground);
+}
+
+.text-cmc-secondary {
+  color: var(--foreground-secondary);
+}
+
+.text-cmc-tertiary {
+  color: var(--foreground-tertiary);
+}
+
+.text-cmc-green {
+  color: var(--success-green);
+}
+
+.text-cmc-red {
+  color: var(--danger-red);
+}
+
+.text-cmc-blue {
+  color: var(--primary-blue);
+}
+
+.border-cmc {
+  border-color: var(--border-primary);
+}
+
+.border-cmc-subtle {
+  border-color: var(--border-subtle);
+}
+
+/* Card styles */
+.cmc-card {
+  background-color: var(--background-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.cmc-card:hover {
+  background-color: var(--background-hover);
+  border-color: var(--border-primary);
+}
+
+/* Button styles */
+.cmc-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.cmc-button-primary {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+.cmc-button-primary:hover {
+  opacity: 0.9;
+}
+
+.cmc-button-secondary {
+  background-color: var(--background-elevated);
+  color: var(--foreground);
+  border: 1px solid var(--border-primary);
+}
+
+.cmc-button-secondary:hover {
+  background-color: var(--background-hover);
+}
+
+/* Toast animations */
+@keyframes enter {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes leave {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.animate-enter {
+  animation: enter 0.3s ease-out;
+}
+
+.animate-leave {
+  animation: leave 0.2s ease-in forwards;
 }

@@ -48,7 +48,7 @@ export default function AddHoldingForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Quantity */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-100 mb-2">
           Số lượng
         </label>
         <input
@@ -56,16 +56,16 @@ export default function AddHoldingForm({
           type="number"
           step="any"
           placeholder="0.00000000"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-gray-800 text-gray-50 placeholder-gray-300"
         />
         {errors.quantity && (
-          <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
+          <p className="mt-1 text-sm text-danger-400">{errors.quantity.message}</p>
         )}
       </div>
 
       {/* Average Buy Price */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-100 mb-2">
           Giá mua trung bình (USD) - Tùy chọn
         </label>
         <input
@@ -73,23 +73,23 @@ export default function AddHoldingForm({
           type="number"
           step="any"
           placeholder="0.00"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-gray-800 text-gray-50 placeholder-gray-300"
         />
         {errors.averageBuyPrice && (
-          <p className="mt-1 text-sm text-red-600">{errors.averageBuyPrice.message}</p>
+          <p className="mt-1 text-sm text-danger-400">{errors.averageBuyPrice.message}</p>
         )}
       </div>
 
       {/* Notes */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-100 mb-2">
           Ghi chú - Tùy chọn
         </label>
         <textarea
           {...register('notes')}
           rows={3}
           placeholder="Thêm ghi chú về holding này..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-gray-800 text-gray-50 placeholder-gray-300"
         />
       </div>
 
@@ -98,14 +98,14 @@ export default function AddHoldingForm({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-dark-500 hover:border-gray-500 transition-colors"
         >
           Hủy
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSubmitting ? (
             <Loader className="w-4 h-4 animate-spin mx-auto" />

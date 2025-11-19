@@ -14,7 +14,6 @@ import {
   // Portfolio types
   PortfolioHolding,
   PortfolioValue,
-  PortfolioSnapshot,
   CreateHoldingRequest,
   UpdateHoldingRequest,
   PortfolioResponse,
@@ -22,6 +21,7 @@ import {
   // Alert types
   PriceAlert,
   CreateAlertRequest,
+  UpdateAlertRequest,
   AlertsResponse,
 
   // Crypto types
@@ -36,6 +36,7 @@ const backendApi = axios.create({
     'Accept': 'application/json',
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Send cookies with requests
 });
 
 export const clientApi = {
@@ -200,57 +201,6 @@ export const clientApi = {
     if (response.status !== 200) throw new Error('Failed to fetch price history');
     return response.data;
   },
-
-  async getCoinInfoVietnamese(id: string) {
-    const response = await backendApi.get(`/crypto/${id}/vi`);
-    if (response.status !== 200) throw new Error('Failed to fetch coin info in Vietnamese');
-
-    const coinData = response.data as CoinDetails & {
-      description?: { vi?: string };
-      tickers?: Array<Record<string, unknown>>;
-    };
-    // Transform backend response to match frontend expectations
-    return {
-      data: {
-        [id]: {
-          id: parseInt(id) || 1,
-          name: coinData.name,
-          symbol: coinData.symbol,
-          category: '',
-          description: coinData.description?.vi || coinData.description?.en || '',
-          slug: coinData.id,
-          logo: coinData.image?.large || '',
-          subreddit: '',
-          notice: '',
-          tags: [],
-          tag_names: [],
-          tag_groups: [],
-          urls: {
-            website: Array.isArray(coinData.links?.homepage) ? coinData.links.homepage : [],
-            technical_doc: Array.isArray((coinData.links as Record<string, unknown>)?.whitepaper) ? (coinData.links as Record<string, unknown>).whitepaper as string[] : [],
-            twitter: coinData.links?.twitter_screen_name ? [`https://twitter.com/${coinData.links.twitter_screen_name}`] : [],
-            reddit: coinData.links?.subreddit_url ? [coinData.links.subreddit_url] : [],
-            message_board: Array.isArray(coinData.links?.official_forum_url) ? coinData.links.official_forum_url : [],
-            announcement: Array.isArray(coinData.links?.announcement_url) ? coinData.links.announcement_url : [],
-            chat: Array.isArray(coinData.links?.chat_url) ? coinData.links.chat_url : [],
-            explorer: Array.isArray(coinData.links?.blockchain_site) ? coinData.links.blockchain_site : [],
-            source_code: Array.isArray(coinData.links?.repos_url?.github) ? coinData.links.repos_url.github : [],
-            facebook: [],
-          },
-          platform: null,
-          date_added: new Date().toISOString(),
-          twitter_username: coinData.links?.twitter_screen_name || '',
-          is_hidden: 0,
-          date_launched: new Date().toISOString(),
-          contract_address: [],
-          self_reported_circulating_supply: 0,
-          self_reported_tags: null,
-          self_reported_market_cap: 0,
-          num_market_pairs: coinData.tickers?.length || 0,
-        }
-      }
-    };
-  },
 };
 
 
@@ -265,19 +215,15 @@ export const authApi = {
         status: response.status,
         statusText: response.statusText,
         data: response.data,
-        hasAccessToken: !!response.data?.access_token,
+        hasUser: !!response.data?.user,
       });
 
-      if (response.data.access_token) {
-        localStorage.setItem('auth_token', response.data.access_token);
-        if (response.data.id_token) {
-          localStorage.setItem('id_token', response.data.id_token);
-        }
-        this.syncTokenToCookie(response.data.access_token);
+      if (response.data.user) {
+        // Tokens are now in HttpOnly cookies, no need to store in localStorage
         return response.data;
       }
 
-      console.error('No access_token in response:', response.data);
+      console.error('No user in response:', response.data);
       return { error: 'Đăng nhập thất bại' };
     } catch (error: unknown) {
       console.error('SignIn request error:', error);
@@ -337,14 +283,8 @@ export const authApi = {
 
   async changePassword(data: ChangePasswordRequest): Promise<AuthResponse> {
     try {
-      const token = this.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.post('/auth/change-password', data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.post('/auth/change-password', data);
       return { message: response.data.message || 'Đổi mật khẩu thành công!' };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -356,14 +296,8 @@ export const authApi = {
 
   async getProfile(): Promise<AuthResponse> {
     try {
-      const token = this.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.get('/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.get('/auth/me');
 
       return {
         user: {
@@ -374,7 +308,6 @@ export const authApi = {
         },
       };
     } catch (error: unknown) {
-      this.signOut();
       const err = error as { response?: { data?: { message?: string } } };
       return {
         error: err.response?.data?.message || 'Lấy thông tin người dùng thất bại'
@@ -384,41 +317,22 @@ export const authApi = {
 
   async signOut(): Promise<void> {
     if (typeof window !== 'undefined') {
-      const token = this.getToken();
-
-      // Call backend logout endpoint to clear cache
-      if (token) {
-        try {
-          await backendApi.post('/auth/logout', {}, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        } catch (error) {
-          // Even if logout API fails, we still clear local tokens
-          console.error('Logout API error:', error);
-        }
+      try {
+        // Call backend logout endpoint to clear HttpOnly cookies
+        await backendApi.post('/auth/logout');
+      } catch (error) {
+        console.error('Logout API error:', error);
       }
-
-      // Clear local storage and cookies
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('id_token');
-      // Remove cookie
-      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/';
     }
   },
 
-  getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('auth_token');
-  },
-
-  isAuthenticated(): boolean {
-    return !!this.getToken();
-  },
-
-  // Helper to sync token to cookies for middleware
-  syncTokenToCookie(token: string): void {
-    if (typeof window !== 'undefined') {
-      document.cookie = `auth_token=${token}; path=/; samesite=strict`;
+  // Check if user is authenticated by calling /auth/me
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      const response = await backendApi.get('/auth/me');
+      return !!response.data?.id;
+    } catch {
+      return false;
     }
   },
 
@@ -434,20 +348,14 @@ export const authApi = {
       return { error: decodeURIComponent(error) };
     }
 
-    const accessToken = params.get('access_token');
-    const idToken = params.get('id_token');
+    const success = params.get('success');
     const userId = params.get('user_id');
     const email = params.get('email');
     const name = params.get('name');
     const picture = params.get('picture');
 
-    if (accessToken && userId && email) {
-      localStorage.setItem('auth_token', accessToken);
-      if (idToken) {
-        localStorage.setItem('id_token', idToken);
-      }
-      this.syncTokenToCookie(accessToken);
-
+    if (success === 'true' && userId && email) {
+      // Tokens are in HttpOnly cookies, just return user info
       return {
         user: {
           id: userId,
@@ -455,8 +363,6 @@ export const authApi = {
           name: name || undefined,
           picture: picture || undefined,
         },
-        access_token: accessToken,
-        id_token: idToken || undefined,
       };
     }
 
@@ -470,16 +376,8 @@ export const authApi = {
 export const alertsApi = {
   async createAlert(alertData: CreateAlertRequest): Promise<AlertsResponse<PriceAlert[]>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.post('/alerts', alertData, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.post('/alerts', alertData);
       return { data: [response.data] };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -491,16 +389,8 @@ export const alertsApi = {
 
   async getAlerts(): Promise<AlertsResponse<PriceAlert[]>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.get('/alerts', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.get('/alerts');
       return { data: response.data };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -512,16 +402,8 @@ export const alertsApi = {
 
   async deleteAlert(alertId: string): Promise<AlertsResponse<void>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.delete(`/alerts/${alertId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.delete(`/alerts/${alertId}`);
       return { message: response.data.message };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -533,19 +415,8 @@ export const alertsApi = {
 
   async toggleAlert(alertId: string, isActive: boolean): Promise<AlertsResponse<void>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.patch(`/alerts/${alertId}/toggle`,
-        { isActive },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.patch(`/alerts/${alertId}/toggle`, { isActive });
       return { message: response.data.message };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -557,16 +428,8 @@ export const alertsApi = {
 
   async getTriggeredAlerts(): Promise<AlertsResponse<PriceAlert[]>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.get('/alerts/triggered', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.get('/alerts/triggered');
 
       // Backend already returns camelCase, no transformation needed
       return { data: response.data };
@@ -574,6 +437,19 @@ export const alertsApi = {
       const err = error as { response?: { data?: { message?: string } } };
       return {
         error: err.response?.data?.message || 'Lấy danh sách thông báo thất bại'
+      };
+    }
+  },
+
+  async updateAlert(alertId: string, data: UpdateAlertRequest): Promise<AlertsResponse<PriceAlert>> {
+    try {
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.patch(`/alerts/${alertId}`, data);
+      return { data: response.data };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      return {
+        error: err.response?.data?.message || 'Cập nhật cảnh báo thất bại'
       };
     }
   }
@@ -584,14 +460,8 @@ export const alertsApi = {
 export const portfolioApi = {
   async getHoldings(): Promise<PortfolioResponse<PortfolioHolding[]>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.get('/portfolio/holdings', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.get('/portfolio/holdings');
       return { data: response.data };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -603,14 +473,8 @@ export const portfolioApi = {
 
   async addHolding(holdingData: CreateHoldingRequest): Promise<PortfolioResponse<PortfolioHolding[]>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.post('/portfolio/holdings', holdingData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.post('/portfolio/holdings', holdingData);
       return { data: [response.data] };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -622,14 +486,8 @@ export const portfolioApi = {
 
   async updateHolding(holdingId: string, holdingData: UpdateHoldingRequest): Promise<PortfolioResponse<PortfolioHolding[]>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.put(`/portfolio/holdings/${holdingId}`, holdingData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.put(`/portfolio/holdings/${holdingId}`, holdingData);
       return { data: [response.data] };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -641,14 +499,8 @@ export const portfolioApi = {
 
   async removeHolding(holdingId: string): Promise<PortfolioResponse<void>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.delete(`/portfolio/holdings/${holdingId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.delete(`/portfolio/holdings/${holdingId}`);
       return { message: response.data.message };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -660,14 +512,8 @@ export const portfolioApi = {
 
   async getPortfolioValue(): Promise<PortfolioResponse<PortfolioValue>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.get('/portfolio/value', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.get('/portfolio/value');
       return { data: response.data };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -677,54 +523,10 @@ export const portfolioApi = {
     }
   },
 
-  async getPortfolioHistory(days: number = 30): Promise<PortfolioResponse<PortfolioSnapshot[]>> {
-    try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.get(`/portfolio/history?days=${days}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return { data: response.data };
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return {
-        error: err.response?.data?.message || 'Lấy lịch sử portfolio thất bại'
-      };
-    }
-  },
-
-  async createSnapshot(): Promise<PortfolioResponse<PortfolioSnapshot[]>> {
-    try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.post('/portfolio/snapshot', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return { data: [response.data] };
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return {
-        error: err.response?.data?.message || 'Tạo snapshot thất bại'
-      };
-    }
-  },
-
   async getPortfolioValueHistory(days: number = 7): Promise<PortfolioResponse<unknown>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.get(`/portfolio/value-history?days=${days}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.get(`/portfolio/value-history?days=${days}`);
       return { data: response.data.data };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -736,15 +538,8 @@ export const portfolioApi = {
 
   async setBenchmark(benchmarkValue: number): Promise<PortfolioResponse<unknown>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.post('/portfolio/benchmark',
-        { benchmarkValue },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.post('/portfolio/benchmark', { benchmarkValue });
       return { data: response.data };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -756,14 +551,8 @@ export const portfolioApi = {
 
   async getBenchmark(): Promise<PortfolioResponse<unknown>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.get('/portfolio/benchmark', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.get('/portfolio/benchmark');
       return { data: response.data };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -775,14 +564,8 @@ export const portfolioApi = {
 
   async deleteBenchmark(): Promise<PortfolioResponse<void>> {
     try {
-      const token = authApi.getToken();
-      if (!token) {
-        return { error: 'Không tìm thấy token xác thực' };
-      }
-
-      const response = await backendApi.delete('/portfolio/benchmark', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Cookies are sent automatically with withCredentials: true
+      const response = await backendApi.delete('/portfolio/benchmark');
       return { message: response.data.message };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };

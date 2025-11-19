@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, MessageSquarePlus } from 'lucide-react';
 import axios from 'axios';
+import DOMPurify from 'dompurify';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatMessage } from '@/types';
 
@@ -182,17 +183,23 @@ export default function ChatWindow() {
   };
 
   const formatMessage = (content: string) => {
-    // Simple markdown-like formatting
-    return content
+    // Simple markdown-like formatting with HTML entities escaped
+    const formatted = content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\n/g, '<br />');
+
+    // Sanitize HTML to prevent XSS attacks
+    return DOMPurify.sanitize(formatted, {
+      ALLOWED_TAGS: ['strong', 'em', 'br', 'p', 'ul', 'ol', 'li', 'code', 'pre'],
+      ALLOWED_ATTR: [],
+    });
   };
 
   if (isLoadingHistory || authLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="flex items-center justify-center h-full bg-dark-700">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -200,10 +207,10 @@ export default function ChatWindow() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with New Conversation button */}
-      <div className="border-b border-gray-200 p-3 bg-white flex items-center justify-end">
+      <div className="border-b border-gray-700/40 p-3 bg-dark-600/50 flex items-center justify-end">
         <button
           onClick={handleNewConversation}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-primary-400 hover:bg-primary-500/20 rounded-lg transition-colors border border-primary-500/40"
           title="Tạo cuộc trò chuyện mới"
         >
           <MessageSquarePlus size={16} />
@@ -212,7 +219,7 @@ export default function ChatWindow() {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-dark-800">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -227,8 +234,8 @@ export default function ChatWindow() {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                   message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-600 text-white'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-dark-600 text-gray-300 border border-gray-700/40'
                 }`}
               >
                 {message.role === 'user' ? <User size={16} /> : <Bot size={16} />}
@@ -238,8 +245,8 @@ export default function ChatWindow() {
               <div
                 className={`rounded-lg px-3 py-2 ${
                   message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-800 border border-gray-200'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-dark-600 text-gray-200 border border-gray-700/40'
                 }`}
               >
                 <div
@@ -250,7 +257,7 @@ export default function ChatWindow() {
                 />
                 <div
                   className={`text-xs mt-1 opacity-70 ${
-                    message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                    message.role === 'user' ? 'text-primary-100' : 'text-gray-400'
                   }`}
                 >
                   {new Date(message.timestamp).toLocaleTimeString([], {
@@ -267,12 +274,12 @@ export default function ChatWindow() {
         {isLoading && (
           <div className="flex justify-start">
             <div className="flex gap-2 max-w-[80%]">
-              <div className="w-8 h-8 rounded-full bg-gray-600 text-white flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-dark-600 text-gray-300 flex items-center justify-center flex-shrink-0 border border-gray-700/40">
                 <Bot size={16} />
               </div>
-              <div className="bg-white text-gray-800 border border-gray-200 rounded-lg px-3 py-2">
+              <div className="bg-dark-600 text-gray-200 border border-gray-700/40 rounded-lg px-3 py-2">
                 <div className="flex items-center gap-2 text-sm">
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 size={16} className="animate-spin text-primary-500" />
                   <span>Thinking...</span>
                 </div>
               </div>
@@ -284,7 +291,7 @@ export default function ChatWindow() {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 p-4 bg-white">
+      <div className="border-t border-gray-700/40 p-4 bg-dark-600/50">
         <form onSubmit={sendMessage} className="flex gap-2">
           <input
             ref={inputRef}
@@ -292,13 +299,13 @@ export default function ChatWindow() {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder="Ask me about crypto..."
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 border border-gray-700/40 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 bg-dark-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={!inputMessage.trim() || isLoading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg px-3 py-2 flex items-center justify-center transition-colors"
+            className="bg-primary-500 hover:bg-primary-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg px-3 py-2 flex items-center justify-center transition-all"
           >
             {isLoading ? (
               <Loader2 size={16} className="animate-spin" />

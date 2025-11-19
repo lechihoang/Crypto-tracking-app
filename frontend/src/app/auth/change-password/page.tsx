@@ -74,15 +74,15 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-dark-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-lg w-full space-y-8">
-        <div className="bg-white rounded-xl shadow-sm p-10 border border-gray-200">
+        <div className="bg-gray-800 rounded-xl shadow-card border border-gray-600/50 backdrop-blur-sm p-10">
           {/* Header */}
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <h2 className="text-3xl font-bold text-white mb-2">
               Đổi mật khẩu
             </h2>
-            <p className="text-gray-700">
+            <p className="text-gray-100">
               Cập nhật mật khẩu để bảo mật tài khoản tốt hơn
             </p>
           </div>
@@ -92,12 +92,12 @@ export default function ChangePasswordPage() {
             <div className="space-y-4">
               {/* Current Password */}
               <div>
-                <label htmlFor="currentPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="currentPassword" className="block text-sm font-semibold text-gray-100 mb-2">
                   Mật khẩu hiện tại
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
+                    <Lock className="h-5 w-5 text-gray-300" />
                   </div>
                   <input
                     {...register('currentPassword')}
@@ -105,8 +105,8 @@ export default function ChangePasswordPage() {
                     type={showCurrentPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     onFocus={handleInputFocus}
-                    className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 text-gray-900 ${
-                      errors.currentPassword ? 'border-red-300' : 'border-gray-300'
+                    className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-300 text-gray-50 bg-gray-800 ${
+                      errors.currentPassword ? 'border-danger-500/40' : 'border-gray-600'
                     }`}
                     placeholder="Nhập mật khẩu hiện tại"
                   />
@@ -116,25 +116,25 @@ export default function ChangePasswordPage() {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
                     {showCurrentPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-5 w-5 text-gray-300 hover:text-gray-100" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-5 w-5 text-gray-300 hover:text-gray-100" />
                     )}
                   </button>
                 </div>
                 {errors.currentPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.currentPassword.message}</p>
+                  <p className="mt-1 text-sm text-danger-400">{errors.currentPassword.message}</p>
                 )}
               </div>
 
               {/* New Password */}
               <div>
-                <label htmlFor="newPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="newPassword" className="block text-sm font-semibold text-gray-100 mb-2">
                   Mật khẩu mới
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
+                    <Lock className="h-5 w-5 text-gray-300" />
                   </div>
                   <input
                     {...register('newPassword')}
@@ -142,8 +142,8 @@ export default function ChangePasswordPage() {
                     type={showNewPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                     onFocus={handleInputFocus}
-                    className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 text-gray-900 ${
-                      errors.newPassword ? 'border-red-300' : 'border-gray-300'
+                    className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-300 text-gray-50 bg-gray-800 ${
+                      errors.newPassword ? 'border-danger-500/40' : 'border-gray-600'
                     }`}
                     placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
                   />
@@ -153,25 +153,25 @@ export default function ChangePasswordPage() {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
                     {showNewPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-5 w-5 text-gray-300 hover:text-gray-100" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-5 w-5 text-gray-300 hover:text-gray-100" />
                     )}
                   </button>
                 </div>
                 {errors.newPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.newPassword.message}</p>
+                  <p className="mt-1 text-sm text-danger-400">{errors.newPassword.message}</p>
                 )}
               </div>
 
               {/* Confirm Password */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-100 mb-2">
                   Xác nhận mật khẩu mới
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
+                    <Lock className="h-5 w-5 text-gray-300" />
                   </div>
                   <input
                     {...register('confirmPassword')}
@@ -179,8 +179,8 @@ export default function ChangePasswordPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                     onFocus={handleInputFocus}
-                    className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 text-gray-900 ${
-                      errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                    className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-300 text-gray-50 bg-gray-800 ${
+                      errors.confirmPassword ? 'border-danger-500/40' : 'border-gray-600'
                     }`}
                     placeholder="Nhập lại mật khẩu mới"
                   />
@@ -190,14 +190,14 @@ export default function ChangePasswordPage() {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-5 w-5 text-gray-300 hover:text-gray-100" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-5 w-5 text-gray-300 hover:text-gray-100" />
                     )}
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                  <p className="mt-1 text-sm text-danger-400">{errors.confirmPassword.message}</p>
                 )}
               </div>
             </div>
@@ -206,10 +206,10 @@ export default function ChangePasswordPage() {
             <button
               type="submit"
               disabled={loading || isSubmitting}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading || isSubmitting ? (
-                <Loader className="w-5 h-5 animate-spin" />
+                <Loader className="w-5 h-5 animate-spin text-primary-500" />
               ) : (
                 'Đổi mật khẩu'
               )}
@@ -217,11 +217,11 @@ export default function ChangePasswordPage() {
 
             {/* Back to Settings */}
             <div className="text-center text-sm">
-              <span className="text-gray-700">Không muốn đổi? </span>
+              <span className="text-gray-100">Không muốn đổi? </span>
               <button
                 type="button"
                 onClick={() => router.push('/settings')}
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                className="text-primary-400 hover:text-primary-300 font-medium"
               >
                 Quay lại cài đặt
               </button>
@@ -230,25 +230,25 @@ export default function ChangePasswordPage() {
         </div>
 
         {/* Security Tips */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h4 className="text-sm font-semibold text-blue-900 mb-3">
-            💡 Mẹo bảo mật
+        <div className="bg-primary-500/20 border border-primary-500/40 rounded-xl p-6">
+          <h4 className="text-sm font-semibold text-primary-400 mb-3">
+            Mẹo bảo mật
           </h4>
-          <ul className="text-sm text-blue-800 space-y-2">
+          <ul className="text-sm text-gray-100 space-y-2">
             <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-0.5">•</span>
+              <span className="text-primary-400 mt-0.5">•</span>
               <span>Sử dụng mật khẩu mạnh với ít nhất 8 ký tự</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-0.5">•</span>
+              <span className="text-primary-400 mt-0.5">•</span>
               <span>Kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-0.5">•</span>
+              <span className="text-primary-400 mt-0.5">•</span>
               <span>Không sử dụng lại mật khẩu từ các tài khoản khác</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-0.5">•</span>
+              <span className="text-primary-400 mt-0.5">•</span>
               <span>Thay đổi mật khẩu định kỳ để tăng cường bảo mật</span>
             </li>
           </ul>

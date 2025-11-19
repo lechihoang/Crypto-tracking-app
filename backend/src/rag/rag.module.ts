@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
 import { RagService } from "./rag.service";
 import { EmbeddingService } from "./embedding.service";
 import { ScraperService } from "./scraper.service";
@@ -7,6 +8,7 @@ import { RagController } from "./rag.controller";
 import { RagSchedulerService } from "./rag-scheduler.service";
 
 @Module({
+  imports: [ConfigModule],
   controllers: [RagController],
   providers: [
     RagService,

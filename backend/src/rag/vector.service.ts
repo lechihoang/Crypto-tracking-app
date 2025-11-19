@@ -159,6 +159,57 @@ export class VectorService {
     }
   }
 
+  async deleteBySource(source: string): Promise<number> {
+    try {
+      if (!this.pinecone) {
+        console.log("Pinecone not initialized - cannot delete by source");
+        return 0;
+      }
+
+      const index = this.pinecone.index(this.indexName);
+
+      // Get count before deletion for logging
+      const statsBefore = await this.getIndexStats();
+      const countBefore = statsBefore?.totalVectorCount || 0;
+
+      // If index is empty, no need to delete
+      if (countBefore === 0) {
+        console.log(`No vectors to delete from source: ${source} (index is empty)`);
+        return 0;
+      }
+
+      // Delete all vectors matching the source
+      try {
+        await index.deleteMany({
+          filter: {
+            source: { $eq: source },
+          },
+        });
+      } catch (deleteError: unknown) {
+        // Handle 404 error when trying to delete from empty index
+        const errorMessage = deleteError instanceof Error ? deleteError.message : String(deleteError);
+        if (errorMessage.includes('404')) {
+          console.log(`No vectors found for source: ${source} (404 response)`);
+          return 0;
+        }
+        throw deleteError;
+      }
+
+      // Get count after deletion
+      const statsAfter = await this.getIndexStats();
+      const countAfter = statsAfter?.totalVectorCount || 0;
+
+      const deletedCount = countBefore - countAfter;
+      console.log(`Deleted ${deletedCount} vectors from source: ${source}`);
+
+      return deletedCount;
+    } catch (error: unknown) {
+      console.error(`Error deleting vectors by source "${source}":`, error);
+      // Don't throw - log and return 0 to allow refresh to continue
+      return 0;
+    }
+  }
+
   async deleteOldDocuments(daysOld: number = 30): Promise<void> {
     try {
       if (!this.pinecone) return;

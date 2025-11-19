@@ -1,5 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { getModelToken } from "@nestjs/mongoose";
+import { NotFoundException } from "@nestjs/common";
 import { AlertsService } from "../alerts.service";
 import { PriceAlert } from "../../schemas/price-alert.schema";
 import { CreateAlertDto } from "../dto/create-alert.dto";
@@ -191,14 +192,14 @@ describe("AlertsService", () => {
       expect(mockExec).toHaveBeenCalled();
     });
 
-    it("should throw error if alert not found", async () => {
+    it("should throw NotFoundException if alert not found", async () => {
       const userId = "user-123";
       const alertId = "non-existent-alert";
 
       mockExec.mockResolvedValue({ deletedCount: 0 });
 
       await expect(service.deleteAlert(userId, alertId)).rejects.toThrow(
-        "Alert not found",
+        NotFoundException,
       );
     });
 
@@ -209,7 +210,7 @@ describe("AlertsService", () => {
       mockExec.mockResolvedValue({ deletedCount: 0 });
 
       await expect(service.deleteAlert(userId, alertId)).rejects.toThrow(
-        "Alert not found",
+        NotFoundException,
       );
     });
   });
@@ -228,7 +229,10 @@ describe("AlertsService", () => {
 
       await service.toggleAlert(userId, alertId);
 
-      expect(mockAlertModel.findOne).toHaveBeenCalledWith({ _id: alertId, userId });
+      expect(mockAlertModel.findOne).toHaveBeenCalledWith({
+        _id: alertId,
+        userId,
+      });
       expect(mockAlertModel.updateOne).toHaveBeenCalledWith(
         { _id: alertId, userId },
         { isActive: true },
@@ -248,14 +252,17 @@ describe("AlertsService", () => {
 
       await service.toggleAlert(userId, alertId);
 
-      expect(mockAlertModel.findOne).toHaveBeenCalledWith({ _id: alertId, userId });
+      expect(mockAlertModel.findOne).toHaveBeenCalledWith({
+        _id: alertId,
+        userId,
+      });
       expect(mockAlertModel.updateOne).toHaveBeenCalledWith(
         { _id: alertId, userId },
         { isActive: false },
       );
     });
 
-    it("should throw error if alert not found", async () => {
+    it("should throw NotFoundException if alert not found", async () => {
       const userId = "user-123";
       const alertId = "non-existent-alert";
 
@@ -264,7 +271,7 @@ describe("AlertsService", () => {
       });
 
       await expect(service.toggleAlert(userId, alertId)).rejects.toThrow(
-        "Alert not found",
+        NotFoundException,
       );
     });
   });
@@ -308,30 +315,6 @@ describe("AlertsService", () => {
       const result = await service.getAllActiveAlerts();
 
       expect(result).toEqual([]);
-    });
-  });
-
-  describe("disableAlert", () => {
-    it("should disable an alert by deleting it", async () => {
-      const alertId = "alert-1";
-
-      mockExec.mockResolvedValue({ deletedCount: 1 });
-
-      await service.disableAlert(alertId);
-
-      expect(mockAlertModel.deleteOne).toHaveBeenCalledWith({ _id: alertId });
-      expect(mockExec).toHaveBeenCalled();
-    });
-
-    it("should handle alert that does not exist", async () => {
-      const alertId = "alert-already-deleted";
-
-      mockExec.mockResolvedValue({ deletedCount: 0 });
-
-      await service.disableAlert(alertId);
-
-      expect(mockAlertModel.deleteOne).toHaveBeenCalledWith({ _id: alertId });
-      expect(mockExec).toHaveBeenCalled();
     });
   });
 });

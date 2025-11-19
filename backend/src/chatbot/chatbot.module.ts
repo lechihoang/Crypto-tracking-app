@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ChatbotController } from "./chatbot.controller";
 import { ChatbotService } from "./chatbot.service";
+import { ChatbotSchedulerService } from "./chatbot-scheduler.service";
 import { RagModule } from "../rag/rag.module";
 import { ChatMessage, ChatMessageSchema } from "../schemas";
 
@@ -13,6 +14,6 @@ import { ChatMessage, ChatMessageSchema } from "../schemas";
     RagModule,
   ],
   controllers: [ChatbotController],
-  providers: [ChatbotService],
+  providers: [ChatbotService, ChatbotSchedulerService],
 })
 export class ChatbotModule {}

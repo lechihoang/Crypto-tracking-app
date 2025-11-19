@@ -6,7 +6,7 @@
 // Note: coinSymbol, coinName, coinImage are NOT stored in database
 // They are populated from CoinGecko API when fetched from backend
 export interface PriceAlert {
-  id: string;
+  _id: string; // MongoDB ID
   userId: string;
   coinId: string; // CoinGecko ID (e.g., "bitcoin")
   coinSymbol?: string; // Populated from API (e.g., "BTC")
@@ -19,6 +19,7 @@ export interface PriceAlert {
   updatedAt?: string; // ISO timestamp
   triggeredPrice?: number;
   triggeredAt?: string; // ISO timestamp
+  read?: boolean; // Client-side only: tracks if notification has been viewed
 }
 
 // Create alert request

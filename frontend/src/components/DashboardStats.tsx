@@ -41,30 +41,30 @@ const DashboardStats = React.memo(function DashboardStats({ stats = defaultStats
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {stats.map((stat) => (
-        <div key={stat.title} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div key={stat.title} className="bg-gray-800 border border-gray-600/50 rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-all p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-sm font-medium text-gray-300 mb-1">{stat.title}</p>
+              <p className="text-2xl font-bold text-white">{stat.value}</p>
               {stat.change && (
                 <p className={`text-sm font-medium ${
-                  stat.changeType === 'positive' ? 'text-green-600' :
-                  stat.changeType === 'negative' ? 'text-red-600' :
-                  'text-gray-600'
+                  stat.changeType === 'positive' ? 'text-success-500' :
+                  stat.changeType === 'negative' ? 'text-danger-500' :
+                  'text-gray-300'
                 }`}>
                   {stat.change}
                 </p>
               )}
             </div>
-            <div className={`p-3 rounded-xl ${
-              stat.changeType === 'positive' ? 'bg-green-100' :
-              stat.changeType === 'negative' ? 'bg-red-100' :
-              'bg-blue-100'
+            <div className={`p-3 rounded-lg ${
+              stat.changeType === 'positive' ? 'bg-success-500/20' :
+              stat.changeType === 'negative' ? 'bg-danger-500/20' :
+              'bg-primary-500/20'
             }`}>
               <stat.icon className={`w-6 h-6 ${
-                stat.changeType === 'positive' ? 'text-green-600' :
-                stat.changeType === 'negative' ? 'text-red-600' :
-                'text-blue-600'
+                stat.changeType === 'positive' ? 'text-success-500' :
+                stat.changeType === 'negative' ? 'text-danger-500' :
+                'text-primary-500'
               }`} />
             </div>
           </div>

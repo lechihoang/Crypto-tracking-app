@@ -24,10 +24,10 @@ export default function CoinDetailPage() {
       try {
         setLoading(true);
 
-        // Fetch price data and coin info in Vietnamese in parallel
+        // Fetch price data and coin info in parallel
         const [quotesResponse, infoResponse] = await Promise.all([
           clientApi.getQuotes(params.id as string),
-          clientApi.getCoinInfoVietnamese(params.id as string),
+          clientApi.getCoinInfo(params.id as string),
         ]);
 
         if (quotesResponse.data) {
@@ -56,12 +56,12 @@ export default function CoinDetailPage() {
 
   if (error || !coin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
-        <div className="bg-white p-8 rounded-xl shadow-xl border border-gray-200 text-center">
-          <p className="text-red-600 text-lg font-medium mb-6">{error || 'Không tìm thấy đồng tiền'}</p>
-          <Link 
-            href="/" 
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg"
+      <div className="min-h-screen bg-dark-900 flex flex-col justify-center items-center">
+        <div className="bg-gray-800 p-8 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] border border-gray-600/50 text-center">
+          <p className="text-red-400 text-lg font-medium mb-6">{error || 'Không tìm thấy đồng tiền'}</p>
+          <Link
+            href="/"
+            className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors duration-200"
           >
             Về trang chủ
           </Link>
@@ -71,17 +71,17 @@ export default function CoinDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-dark-900">
+      <header className="bg-gray-800 shadow-[0_2px_8px_rgba(0,0,0,0.3)] border-b border-gray-600/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+              className="p-2 hover:bg-dark-700 rounded-full transition-colors duration-200"
             >
-              <ArrowLeft className="h-6 w-6 text-gray-600" />
+              <ArrowLeft className="h-6 w-6 text-gray-100" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-white">
               {coin.name} ({coin.symbol})
             </h1>
           </div>

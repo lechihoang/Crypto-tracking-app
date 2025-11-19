@@ -49,18 +49,18 @@ function AuthCallbackContent() {
   }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-dark-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="bg-white rounded-xl shadow-sm p-10 border border-gray-200 text-center">
+        <div className="bg-gray-800 rounded-xl shadow-card border border-gray-600/50 backdrop-blur-sm p-10 text-center">
           {status === 'loading' && (
             <>
-              <div className="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <Loader className="h-8 w-8 text-blue-600 animate-spin" />
+              <div className="mx-auto h-16 w-16 bg-primary-500/20 rounded-full flex items-center justify-center mb-4">
+                <Loader className="h-8 w-8 text-primary-400 animate-spin" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-white mb-2">
                 Đang xác thực...
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-300">
                 Vui lòng đợi trong giây lát
               </p>
             </>
@@ -68,13 +68,13 @@ function AuthCallbackContent() {
 
           {status === 'success' && (
             <>
-              <div className="mx-auto h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="mx-auto h-16 w-16 bg-success-500/20 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="h-8 w-8 text-success-400" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-white mb-2">
                 Đăng nhập thành công!
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-300">
                 Đang chuyển hướng đến dashboard...
               </p>
             </>
@@ -82,16 +82,16 @@ function AuthCallbackContent() {
 
           {status === 'error' && (
             <>
-              <div className="mx-auto h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <XCircle className="h-8 w-8 text-red-600" />
+              <div className="mx-auto h-16 w-16 bg-danger-500/20 rounded-full flex items-center justify-center mb-4">
+                <XCircle className="h-8 w-8 text-danger-400" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-white mb-2">
                 Đăng nhập thất bại
               </h2>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-300 mb-4">
                 {errorMessage || 'Đã có lỗi xảy ra trong quá trình đăng nhập'}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-400">
                 Đang chuyển hướng về trang đăng nhập...
               </p>
             </>
@@ -105,16 +105,16 @@ function AuthCallbackContent() {
 export default function AuthCallbackPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-dark-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
-          <div className="bg-white rounded-xl shadow-sm p-10 border border-gray-200 text-center">
-            <div className="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <Loader className="h-8 w-8 text-blue-600 animate-spin" />
+          <div className="bg-gray-800 rounded-xl shadow-card border border-gray-600/50 backdrop-blur-sm p-10 text-center">
+            <div className="mx-auto h-16 w-16 bg-primary-500/20 rounded-full flex items-center justify-center mb-4">
+              <Loader className="h-8 w-8 text-primary-400 animate-spin" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-white mb-2">
               Đang xác thực...
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-300">
               Vui lòng đợi trong giây lát
             </p>
           </div>

@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from "@nestjs/testing";
 import { EmailService } from "../email.service";
-import { PriceAlert } from "../../schemas/price-alert.schema";
 import { UserService } from "../../user/user.service";
 import * as nodemailer from "nodemailer";
 
@@ -58,7 +57,7 @@ describe("EmailService", () => {
       const mockAlert: any = {
         _id: "alert-1",
         userId: "user-1",
-        coinName: "bitcoin",
+        coinId: "bitcoin",
         condition: "above",
         targetPrice: 50000,
         isActive: true,
@@ -84,7 +83,7 @@ describe("EmailService", () => {
       const mockAlert: any = {
         _id: "alert-2",
         userId: "user-1",
-        coinName: "ethereum",
+        coinId: "ethereum",
         condition: "below",
         targetPrice: 3000,
         isActive: true,
@@ -110,7 +109,7 @@ describe("EmailService", () => {
       const mockAlert: any = {
         _id: "alert-3",
         userId: "user-1",
-        coinName: "bitcoin",
+        coinId: "bitcoin",
         condition: "above",
         targetPrice: 50000,
         isActive: true,
@@ -137,7 +136,7 @@ describe("EmailService", () => {
       const mockAlert: any = {
         _id: "alert-4",
         userId: "user-1",
-        coinName: "bitcoin",
+        coinId: "bitcoin",
         condition: "above",
         targetPrice: 50000,
         isActive: true,
@@ -161,7 +160,7 @@ describe("EmailService", () => {
       const mockAlert: any = {
         _id: "alert-5",
         userId: "user-1",
-        coinName: "bitcoin",
+        coinId: "bitcoin",
         condition: "above",
         targetPrice: 123456.789,
         isActive: true,
@@ -236,7 +235,7 @@ describe("EmailService", () => {
       const mockAlert: any = {
         _id: "alert-1",
         userId: "user-1",
-        coinName: "bitcoin",
+        coinId: "bitcoin",
         condition: "above",
         targetPrice: 50000,
         isActive: true,
@@ -300,7 +299,7 @@ describe("EmailService", () => {
       const alert1: any = {
         _id: "alert-1",
         userId: "user-1",
-        coinName: "bitcoin",
+        coinId: "bitcoin",
         condition: "above",
         targetPrice: 50000,
         isActive: true,
@@ -312,7 +311,7 @@ describe("EmailService", () => {
       const alert2: any = {
         _id: "alert-2",
         userId: "user-2",
-        coinName: "bitcoin",
+        coinId: "bitcoin",
         condition: "above",
         targetPrice: 50000,
         isActive: true,

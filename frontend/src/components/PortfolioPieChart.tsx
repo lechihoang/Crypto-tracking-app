@@ -28,8 +28,8 @@ const PortfolioPieChart = React.memo(function PortfolioPieChart({ holdings, tota
     holdings
       .map((holding) => ({
         name: holding.coinSymbol.toUpperCase(),
-        value: Number(holding.currentPrice),
-        percentage: totalValue > 0 ? (Number(holding.currentPrice) / totalValue) * 100 : 0,
+        value: Number(holding.currentValue),
+        percentage: totalValue > 0 ? (Number(holding.currentValue) / totalValue) * 100 : 0,
         fullName: holding.coinName,
       }))
       .sort((a, b) => b.value - a.value), // Sort by value descending
@@ -63,13 +63,13 @@ const PortfolioPieChart = React.memo(function PortfolioPieChart({ holdings, tota
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900">{data.fullName}</p>
-          <p className="text-sm text-gray-600">{data.name}</p>
-          <p className="text-base font-bold text-blue-600 mt-1">
+        <div className="bg-[#23242a] p-3 border border-gray-600/50 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+          <p className="font-semibold text-white">{data.fullName}</p>
+          <p className="text-sm text-gray-100">{data.name}</p>
+          <p className="text-base font-bold text-primary-500 mt-1">
             {formatCurrency(data.value)}
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-100">
             {data.percentage.toFixed(2)}% của tổng
           </p>
         </div>
@@ -98,9 +98,9 @@ const PortfolioPieChart = React.memo(function PortfolioPieChart({ holdings, tota
                 className="w-3 h-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-gray-700 font-medium">{entry.value}</span>
+              <span className="text-gray-100 font-medium">{entry.value}</span>
             </div>
-            <span className="text-gray-600">
+            <span className="text-gray-100">
               {entry.payload.percentage.toFixed(2)}%
             </span>
           </div>
@@ -122,12 +122,6 @@ const PortfolioPieChart = React.memo(function PortfolioPieChart({ holdings, tota
               data={chartData}
               cx="50%"
               cy="50%"
-              labelLine={false}
-              // @ts-expect-error - Recharts label typing is complex
-              label={((props: { percentage?: number }) => {
-                const percentage = props.percentage;
-                return percentage ? `${percentage.toFixed(1)}%` : '';
-              })}
               innerRadius={60}
               outerRadius={95}
               fill="#8884d8"
@@ -145,8 +139,8 @@ const PortfolioPieChart = React.memo(function PortfolioPieChart({ holdings, tota
         {/* Center Label */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
-            <p className="text-xs text-gray-500 font-medium">Tổng giá trị</p>
-            <p className="text-lg font-bold text-gray-900">{formatCurrency(totalValue)}</p>
+            <p className="text-xs text-gray-100 font-medium">Tổng giá trị</p>
+            <p className="text-lg font-bold text-white">{formatCurrency(totalValue)}</p>
           </div>
         </div>
       </div>
