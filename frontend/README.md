@@ -1,74 +1,56 @@
 # Crypto Tracker Frontend
 
-This is a [Next.js](https://nextjs.org) cryptocurrency tracking application built with shadcn/ui components, featuring real-time price tracking, portfolio management, and AI-powered chat assistance.
+A cryptocurrency tracking application built with Next.js 15, React 19, and shadcn/ui components. Features real-time price tracking, portfolio management, price alerts, and AI-powered chatbot.
 
-## Getting Started
+## 🚀 Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- Backend API running at `http://localhost:3001`
+
+### Installation and Running
 
 ```bash
+# Install dependencies
+npm install
+
+# Create .env.local file
+cp .env.local.example .env.local
+# Edit NEXT_PUBLIC_API_URL if needed
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev          # Development with Turbopack
+npm run build        # Build for production
+npm run start        # Run production build
+npm run lint         # Run ESLint
+npm test             # Run tests
+npm run test:watch   # Run tests in watch mode
+```
 
-## UI Components - shadcn/ui Migration
+## UI Components
 
-This project has completed a comprehensive migration to [shadcn/ui](https://ui.shadcn.com/), a collection of reusable components built on Radix UI and Tailwind CSS. The migration was completed in two phases:
+This project uses [shadcn/ui](https://ui.shadcn.com/), a collection of reusable components built on Radix UI and Tailwind CSS.
 
-### Phase 1 Components
+### Available Components
 
-Core components migrated in Phase 1:
-- **Button** - Primary interactive elements
-- **Input** - Text input fields with validation
-- **Label** - Form field labels
-- **Form** - Form wrapper with validation
-- **Dialog** - Modal dialogs
-- **AlertDialog** - Confirmation dialogs
-- **Table** - Data tables with sorting
-- **Select** - Dropdown selectors
-- **Card** - Content containers
-- **Skeleton** - Loading states
-
-### Phase 2 Components
-
-Advanced components migrated in Phase 2:
-
-#### Chat Interface
-- **ScrollArea** - Styled scrollbars for chat messages
-- **Sheet** - Slide-out panel for chat bubble (opens from right)
-
-#### Search & Selection
-- **Combobox** - Searchable dropdown using Command + Popover
-  - Used in AddCoinBar for coin selection
-  - Supports keyboard navigation and filtering
-  - See [Combobox Usage](#combobox-usage) for details
-
-#### Settings & UI Elements
-- **Switch** - Toggle switches for settings (e.g., email notifications)
-- **Separator** - Visual dividers between sections
-- **Badge** - Status indicators and labels
-- **Tooltip** - Helpful hints on hover
-- **HoverCard** - Rich hover information displays
-
-#### Navigation & Controls
-- **Pagination** - Page navigation controls
-- **Command Palette** - Quick navigation and actions (Cmd+K / Ctrl+K)
-  - See [Command Palette](#command-palette) for details
-
-#### Notifications
-- **Sonner** - Toast notifications for success, error, and loading states
-  - See [Sonner Migration](#sonner-toast-notifications) for details
+- **Button**, **Input**, **Label**, **Form** - Form elements with validation
+- **Dialog**, **AlertDialog**, **Sheet** - Modal and slide-out panels
+- **Table**, **Select**, **Combobox** - Data display and selection
+- **Card**, **Skeleton** - Content containers and loading states
+- **ScrollArea** - Styled scrollbars
+- **Switch**, **Separator**, **Badge** - UI elements
+- **Tooltip**, **HoverCard** - Hover information
+- **Pagination** - Page navigation
+- **Command Palette** - Quick navigation (Cmd+K / Ctrl+K)
+- **Sonner** - Toast notifications
 
 ## Command Palette
 
@@ -143,11 +125,7 @@ function MyComponent() {
 
 ## Sonner Toast Notifications
 
-We use [Sonner](https://sonner.emilkowal.ski/) for toast notifications throughout the application. Sonner was chosen for its excellent UX, accessibility, and seamless integration with shadcn/ui.
-
-### Migration from react-hot-toast
-
-The project has been fully migrated from `react-hot-toast` to Sonner. All toast notifications now use the Sonner API.
+We use [Sonner](https://sonner.emilkowal.ski/) for toast notifications throughout the application.
 
 ### Usage
 
@@ -201,14 +179,6 @@ export default function RootLayout({ children }) {
 }
 ```
 
-### Key Differences from react-hot-toast
-
-- **API**: Similar API but with enhanced features
-- **Styling**: Better integration with Tailwind CSS
-- **Accessibility**: Improved screen reader support
-- **Performance**: More efficient rendering
-- **Positioning**: Automatic smart positioning
-
 ### Best Practices
 
 1. Use `toast.promise()` for async operations
@@ -256,28 +226,56 @@ frontend/
 └── package.json
 ```
 
-## Key Features
+## ✨ Key Features
 
-- **Real-time Crypto Tracking**: Live price updates for cryptocurrencies
-- **Portfolio Management**: Track your crypto holdings and performance
-- **Price Alerts**: Set custom price alerts with email notifications
-- **AI Chat Assistant**: Get crypto insights and answers
+- **Real-time Crypto Tracking**: Live cryptocurrency price updates
+- **Portfolio Management**: Track holdings and portfolio performance
+- **Price Alerts**: Set price alerts with email notifications
+- **AI Chat Assistant**: AI chatbot with crypto information powered by RAG
+- **Command Palette**: Quick navigation with Cmd+K / Ctrl+K
 - **Responsive Design**: Optimized for mobile, tablet, and desktop
-- **Dark Mode**: Theme support (coming soon)
 - **Accessibility**: Full keyboard navigation and screen reader support
+- **Modern UI**: shadcn/ui components with Tailwind CSS 4
+- **Toast Notifications**: Beautiful notifications with Sonner
+- **Property-Based Testing**: Comprehensive testing with fast-check
 
-## Learn More
+## 🛠️ Tech Stack
 
-To learn more about the technologies used:
+- **Framework:** Next.js 15 with App Router and Turbopack
+- **UI Library:** React 19
+- **Language:** TypeScript 5
+- **Styling:** Tailwind CSS 4
+- **UI Components:** shadcn/ui (Radix UI primitives)
+- **Forms:** React Hook Form + Zod validation
+- **Charts:** Recharts
+- **Notifications:** Sonner
+- **Icons:** Lucide React, React Icons
+- **Authentication:** Auth0 SPA JS
+- **HTTP Client:** Axios
+- **Testing:** Vitest, Testing Library, fast-check
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API
-- [shadcn/ui Documentation](https://ui.shadcn.com/) - explore available components
-- [Radix UI](https://www.radix-ui.com/) - underlying component primitives
-- [Tailwind CSS](https://tailwindcss.com/) - utility-first CSS framework
-- [Sonner](https://sonner.emilkowal.ski/) - toast notification library
+## 📖 Learn More
 
-## Deploy on Vercel
+### Technologies
+- [Next.js Documentation](https://nextjs.org/docs) - Next.js features and API
+- [shadcn/ui Documentation](https://ui.shadcn.com/) - UI components
+- [Radix UI](https://www.radix-ui.com/) - Component primitives
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
+- [Sonner](https://sonner.emilkowal.ski/) - Toast notifications
+- [Vitest](https://vitest.dev/) - Testing framework
+- [fast-check](https://fast-check.dev/) - Property-based testing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Deployment
+Deploy to [Vercel Platform](https://vercel.com/new) - the easiest way to deploy a Next.js app.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read the [Contributing Guide](../README.md#contributing) in the root README.
+
+## 📄 License
+
+MIT License
+
+---

@@ -1,39 +1,49 @@
 # Crypto Tracking Backend
 
-A NestJS-based backend API for cryptocurrency tracking, portfolio management, price alerts, and AI-powered chatbot with RAG (Retrieval-Augmented Generation) capabilities.
+Backend API built with NestJS 11 for cryptocurrency tracking application. Features portfolio management, price alerts, AI chatbot with RAG (Retrieval-Augmented Generation), and scheduled tasks.
 
-## Features
+## ✨ Features
 
-- 🔐 **Authentication**: Auth0 integration for secure user authentication
-- 💼 **Portfolio Management**: Track cryptocurrency holdings and portfolio value over time
-- 🔔 **Price Alerts**: Set and manage price alerts with email notifications
-- 🤖 **AI Chatbot**: Groq-powered chatbot with RAG for crypto-related queries
-- 📊 **Market Data**: Real-time cryptocurrency data from CoinGecko API
-- 🔍 **RAG System**: Vector-based search using Pinecone for enhanced chatbot responses
-- 📧 **Email Notifications**: Automated email alerts for price targets
+- 🔐 **Authentication**: Auth0 integration for secure authentication
+- 💼 **Portfolio Management**: Track holdings and portfolio value history
+- 🔔 **Price Alerts**: Manage price alerts with email notifications
+- 🤖 **AI Chatbot**: Groq-powered chatbot with RAG system
+- 📊 **Market Data**: Real-time crypto data from CoinGecko API
+- 🧠 **RAG System**: Vector search with Pinecone to enhance chatbot responses
+- 📧 **Email Notifications**: Automated emails when price targets are reached
+- ⏰ **Scheduled Tasks**: Automatic alert checking, RAG data refresh, session cleanup
+- 🔍 **Web Scraping**: Collect crypto data with Puppeteer and Cheerio
+- 🛡️ **Security**: Helmet, CORS, rate limiting, input validation
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Framework**: NestJS 11.x
+- **Framework**: NestJS 11
+- **Language**: TypeScript 5
 - **Database**: MongoDB with Mongoose
 - **Vector Database**: Pinecone
-- **Authentication**: Auth0
-- **AI/ML**: Groq API for LLM, OpenAI for embeddings
+- **Authentication**: Auth0, JWT, Passport
+- **AI/ML**: 
+  - Groq API (LLM for chatbot)
+  - HuggingFace API (embeddings)
 - **External APIs**: CoinGecko API
-- **Email**: Nodemailer
-- **Caching**: Node-Cache
+- **Email**: Nodemailer (Gmail SMTP)
+- **Web Scraping**: Puppeteer, Cheerio
+- **Caching**: node-cache
 - **Scheduling**: @nestjs/schedule
+- **Security**: Helmet, CORS, @nestjs/throttler
+- **Validation**: class-validator, class-transformer
+- **Testing**: Jest, Supertest
 
-## Prerequisites
+## 📋 Prerequisites
 
 - Node.js 18+ and npm
-- MongoDB instance
+- MongoDB instance (local or MongoDB Atlas)
 - Auth0 account and application
 - Pinecone account and index
-- Groq API key
-- OpenAI API key
-- CoinGecko API key (optional, for higher rate limits)
-- Email service credentials (for alerts)
+- Groq API key (free tier available)
+- HuggingFace API key (free tier available)
+- CoinGecko API key (free Demo API available)
+- Gmail account with App Password (for email alerts)
 
 ## Installation
 
@@ -524,5 +534,3 @@ Crypto Tracking Team
 
 ---
 
-**Last Updated**: November 2024
-**Version**: 1.0.0
