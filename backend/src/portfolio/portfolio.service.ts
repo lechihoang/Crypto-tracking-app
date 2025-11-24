@@ -35,7 +35,8 @@ export class PortfolioService {
    */
   async getHoldings(userId: string): Promise<PortfolioHolding[]> {
     try {
-
+      const holdings = await this.holdingModel.find({ userId }).exec();
+      return this.populateCoinInfo(holdings);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -108,6 +109,7 @@ export class PortfolioService {
     updateHoldingDto: UpdateHoldingDto,
   ): Promise<PortfolioHolding> {
     try {
+      const holding = await this.holdingModel.findOne({ _id: holdingId, userId }).exec();
 
       if (!holding) {
         this.logger.warn(`Holding ${holdingId} not found for user ${userId}`);
@@ -141,6 +143,7 @@ export class PortfolioService {
 
   async removeHolding(userId: string, holdingId: string): Promise<void> {
     try {
+      const result = await this.holdingModel.deleteOne({ _id: holdingId, userId }).exec();
 
       if (result.deletedCount === 0) {
         this.logger.warn(`Holding ${holdingId} not found for user ${userId}`);
@@ -184,9 +187,13 @@ export class PortfolioService {
     }>;
   }> {
     try {
+      const holdings = await this.holdingModel.find({ userId }).exec();
 
       if (holdings.length === 0) {
+        return { totalValue: 0, holdings: [] };
+      }
 
+      const coinIds = holdings.map((h) => h.coinId);
       let prices: Record<string, { usd: number }>;
       try {
         prices = await this.cryptoService.getCoinPrices(coinIds);
@@ -317,6 +324,18 @@ export class PortfolioService {
         throw new NotFoundException("Failed to set benchmark");
       }
 
+      return { userId: snapshot.userId, benchmarkValue: snapshot.benchmarkValue };
+    } catch (error: unknown) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to set benchmark for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
 
       throw new HttpException(
         "Failed to set benchmark. Please try again later.",
@@ -331,8 +350,24 @@ export class PortfolioService {
     updatedAt: Date;
   } | null> {
     try {
+      const snapshot = await this.snapshotModel.findOne({ userId }).exec();
 
       if (!snapshot) {
+        return null;
+      }
+
+      return {
+        userId: snapshot.userId,
+        benchmarkValue: snapshot.benchmarkValue,
+        updatedAt: (snapshot as any).updatedAt || new Date(),
+      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to fetch benchmark for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
 
       throw new HttpException(
         "Failed to fetch benchmark. Please try again later.",
@@ -343,12 +378,25 @@ export class PortfolioService {
 
   async deleteBenchmark(userId: string): Promise<void> {
     try {
+      const snapshot = await this.snapshotModel.findOneAndDelete({ userId }).exec();
 
       if (!snapshot) {
         this.logger.warn(`No benchmark found for user ${userId}`);
         throw new NotFoundException("No benchmark found");
       }
 
+      this.logger.log(`Benchmark deleted for user ${userId}`);
+    } catch (error: unknown) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to delete benchmark for user ${userId}: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
 
       throw new HttpException(
         "Failed to delete benchmark. Please try again later.",
