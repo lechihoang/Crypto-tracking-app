@@ -113,7 +113,7 @@ export class AuthController {
     res.cookie("auth_token", accessToken, {
       httpOnly: true,
       secure: isProduction, // true in production (HTTPS)
-      sameSite: "lax",
+      sameSite: isProduction ? "none" : "lax", // "none" for cross-domain in production
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: "/",
     });
@@ -123,7 +123,7 @@ export class AuthController {
       res.cookie("id_token", idToken, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: "lax",
+        sameSite: isProduction ? "none" : "lax", // "none" for cross-domain in production
         maxAge: 24 * 60 * 60 * 1000,
         path: "/",
       });
