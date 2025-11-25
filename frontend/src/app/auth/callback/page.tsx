@@ -26,30 +26,10 @@ function AuthCallbackContent() {
         } else if (result.user) {
           setStatus('success');
           
-          // Wait a bit for cookies to be set, then verify authentication
-          setTimeout(async () => {
-            try {
-              // Verify the user is actually authenticated by checking /auth/me
-              const profileResult = await authApi.getProfile();
-              if (profileResult.user && !profileResult.error) {
-                // Authentication confirmed, redirect to dashboard
-                router.push('/dashboard');
-              } else {
-                // Cookie not working, show error
-                setStatus('error');
-                setErrorMessage('Authentication failed - please try again');
-                setTimeout(() => {
-                  router.push('/auth/login');
-                }, 3000);
-              }
-            } catch {
-              setStatus('error');
-              setErrorMessage('Authentication verification failed');
-              setTimeout(() => {
-                router.push('/auth/login');
-              }, 3000);
-            }
-          }, 500);
+          // Redirect to home page - cookies are already set by backend
+          setTimeout(() => {
+            router.push('/');
+          }, 1000);
         } else {
           setStatus('error');
           setErrorMessage('Authentication failed - invalid response');
